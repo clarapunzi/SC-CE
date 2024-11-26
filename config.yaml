@@ -1,0 +1,21 @@
+data:
+  german_credit:
+    path: "data/raw/german_credit.csv"
+  folktables:
+    path: "data/raw/folktables/"
+
+models:
+  rf_params:
+    n_estimators: 100
+    random_state: 42
+  lgbm_params:
+    num_leaves: 31
+    random_state: 42
+
+counterfactuals:
+  dice:
+    proximity_weight: 0.5
+  growing_spheres:
+    lambda_param: 0.1
+  lore:
+    samples: 1000
