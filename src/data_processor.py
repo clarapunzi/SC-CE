@@ -2,12 +2,12 @@
 Module for loading, preprocessing, and splitting datasets.
 """
 import os
-from typing import Dict, Tuple, Optional, Union 
+from typing import Dict, Tuple, Optional, Union
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import numpy as np
-
+import category_encoders as ce
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""
 
@@ -15,6 +15,7 @@ class DataProcessor:
         self.config = config
         self.scalers = {}  # Store scalers for each numerical column
         self.encoders = {} # Store encoders for each categorical column
+        self.target_name = "target"
 
     def load_dataset(self, dataset_name: str) -> pd.DataFrame:
         """Load a specific dataset."""
@@ -75,7 +76,7 @@ class DataProcessor:
         del df["default"]
         target = df['target']
         features = df.drop('target', axis=1)
-
+        self.target_name = "Default"
         # Identify numerical and categorical columns
         num_cols = features.select_dtypes(include=['int64', 'float64']).columns
         cat_cols = features.select_dtypes(include=['object', 'category']).columns
@@ -93,8 +94,8 @@ class DataProcessor:
         # Handle categorical features
         if fit:
             for col in cat_cols:
-                self.encoders[col] = LabelEncoder()
-                features[col] = self.encoders[col].fit_transform(features[col])
+                self.encoders[col] = ce.TargetEncoder()
+                features[col] = self.encoders[col].fit_transform(features[col], target)
         else:
             for col in cat_cols:
                 if col in self.encoders:
@@ -102,12 +103,12 @@ class DataProcessor:
 
         return features, target
 
-    def _preprocess_folktables(self, 
+    def _preprocess_folktables(self,
                              data: pd.DataFrame,
                              fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
         """Preprocess Folktables dataset."""
         # Implement similar preprocessing for Folktables
-        pass
+        return
 
     def split_data(self,
                   features: pd.DataFrame,
@@ -186,12 +187,15 @@ class DataProcessor:
         path = os.path.join(dataset_dir, 'feature_names.csv')
         print(f"Loaded feature names from {path}")
         feature_names = pd.read_csv(path)
+        # transform the series into a list
+        feature_names = feature_names['0'].tolist()
+
         for split_name in ['X_train', 'y_train',
-                           'X_test', 'y_test', 
+                           'X_test', 'y_test',
                            'X_calibration', 'y_calibration']:
             path = os.path.join(dataset_dir, f"{split_name}.npz")
             loaded = np.load(path)
             print(f"Loaded {split_name} from {path}")
             splits[split_name] = pd.DataFrame(loaded['patterns'],
-                        columns=(feature_names if split_name.startswith('X') else None))
+                        columns=feature_names if split_name.startswith('X') else None)
         return splits
