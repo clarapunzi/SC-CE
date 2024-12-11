@@ -36,6 +36,11 @@ class CounterfactualGenerator:
         self._dice_data = None
         self._dice_models = {}  # Dictionary to store model-specific DiCE models
         self._explainers = {}   # Dictionary to store model-specific explainers
+        self._method = config.get("counterfactuals",
+                                     {}).get('dice',
+                                              {}).get('method',
+                                                      'genetic')
+        print(f"Using method: {self._method}")
 
     def _save_component(self, component: Any, path: str) -> None:
         """Save a DiCE component to disk."""
@@ -90,15 +95,14 @@ class CounterfactualGenerator:
         self._explainers[model_name] = self._load_component(explainer_path)
 
         if self._dice_models[model_name] is None or self._explainers[model_name] is None:
-            method = self.config.get('dice', {}).get('method', 'random')
-            print(f"Setting up DiCE components for {model_name} using method: {method}")
+            print(f"Setting up DiCE components for {model_name} using method: {self._method}")
             try:
                 # Create new components
                 self._dice_models[model_name] = dice_ml.Model(model=model, backend="sklearn")
                 self._explainers[model_name] = dice_ml.Dice(
                     self._dice_data,
                     self._dice_models[model_name],
-                    method=method
+                    method=self._method
                 )
 
                 # Save components
@@ -130,48 +134,42 @@ class CounterfactualGenerator:
         results = {}
         # Process each model
         for model_name, model in models.items():
-            print(f"Generating counterfactuals for model: {model_name}")
+            print(f"Generating {num_cf} CFs with with method: {cf_method} ({self._method}) for model: {model_name}")
 
             # Setup model-specific components if not already done
             self._setup_model_components(model, model_name)
 
             model_results = []
+            # Generate counterfactuals for entire dataset
+            cf_result = self._explainers[model_name].generate_counterfactuals(
+                X_calibration,
+                total_CFs=num_cf,
+                desired_class="opposite"
+            )
 
-            # Process each instance in the calibration set
-            for idx in tqdm(range(len(X_calibration)), desc=f"Processing {model_name}"):
-                instance = X_calibration.iloc[idx:idx+1]
-                true_class = y_calibration.iloc[idx]
-                #try:
-                # Generate counterfactuals
-                cf_result = self._explainers[model_name].generate_counterfactuals(
-                    instance,
-                    total_CFs=num_cf,
-                    desired_class="opposite"
-                )
-
-                # Extract and store results
-                result = {
-                    'instance_idx': idx,
-                    'original_instance': instance,
-                    'true_class': true_class,
-                    'counterfactuals': cf_result.cf_examples_list[0].final_cfs_df,
-                    'metadata': {
-                        'success': len(cf_result.cf_examples_list[0].final_cfs_df) > 0,
-                        'num_generated': len(cf_result.cf_examples_list[0].final_cfs_df)
-                    }
+            # Process results
+            model_results = [{
+                'instance_idx': idx,
+                'original_instance': X_calibration.iloc[idx:idx+1],
+                'true_class': y_calibration.iloc[idx],
+                'counterfactuals': cf_result.cf_examples_list[idx].final_cfs_df,
+                'metadata': {
+                    'success': len(cf_result.cf_examples_list[idx].final_cfs_df) > 0,
+                    'num_generated': len(cf_result.cf_examples_list[idx].final_cfs_df)
                 }
+            } for idx in range(len(X_calibration))]
 
-                model_results.append(result)
+            # for every instance in the calibration set check how many counterfactuals valid were generated over he num_cf
+            for idx in range(len(X_calibration)):
+                print("sample",idx,np.round((model.predict(X_calibration.iloc[[idx]])!=model_results[idx]['counterfactuals']["target"].values).sum()/num_cf,2))
 
-                # Log to W&B periodically
-                #if idx % 10 == 0:
-                #    self._log_progress(model_name, model_results[-10:], idx)
 
             # Store results for this model
             results[model_name] = model_results
 
             # Save results locally
-            self._save_results(model_results, model_name+"_"+cf_method, dt_name=dt_name)
+            self._save_results(model_results, model_name,
+                               dt_name=dt_name)
 
             # Log final metrics to W&B
             # self._log_final_metrics(model_name, model_results)
@@ -181,10 +179,11 @@ class CounterfactualGenerator:
     def _save_results(self, results: List[Dict[str, Any]], model_name: str, dt_name:str) -> None:
         """Save counterfactual results locally."""
         save_dir = os.path.join(self.config['paths']['counterfactuals'], model_name,dt_name)
+        
         os.makedirs(save_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join(save_dir, f"cf_results_{timestamp}")
+        filepath = os.path.join(save_dir, f"cf_results_{timestamp}_{self._method}")
 
         np.savez(filepath, cfs=results, allow_pickle=True)
         print(f"Saved results to {filepath}")

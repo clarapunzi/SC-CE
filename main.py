@@ -91,16 +91,17 @@ def run_pipeline(
         target_name=target_name,
     )
     counterfactuals = cf_generator.generate_counterfactuals(
-        models,
-        splits['X_calibration'][:4],
-        splits['y_calibration'][:4],
-        cf_method,
-        dt_name=dataset_name
+        models=models,
+        X_calibration=splits['X_calibration'][:],
+        y_calibration=splits['y_calibration'][:],
+        cf_method=cf_method,
+        num_cf=8,
+        dt_name=dataset_name,
     )
     return counterfactuals
 
 if __name__ == "__main__":
-
+    
     run_pipeline(
         dataset_name="german_credit",
         cf_method="dice"

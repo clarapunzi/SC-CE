@@ -42,6 +42,7 @@ models:
 counterfactuals:
   dice:
     proximity_weight: 0.5
+    method: "kdtree"
   growing_spheres:
     lambda_param: 0.1
   lore:

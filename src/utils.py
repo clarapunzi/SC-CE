@@ -56,3 +56,14 @@ def plot_confusion_ascii(y_true, y_pred):
     for i, row in enumerate(cm):
         print(''.join(chars[int(cell * len(chars))] for cell in row))
     #print(''.join(str(i) for i in range(2)))
+
+def write_time(s):
+    s = np.round(s,2)
+    if s<60:
+        return str(s)+"s"
+    elif s<60*60:
+        s = np.round(s/60,2)
+        return str(s)+"m"
+    else:
+        s = np.round(s/60/60,2)
+        return str(s)+"h"

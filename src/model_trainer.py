@@ -43,7 +43,7 @@ class ModelTrainer:
         }
         '''
         '''
-        
+
 
     def _get_model_path(self, model_name: str, dataset_name: str) -> str:
         """Get path for model saving/loading."""
