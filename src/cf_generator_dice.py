@@ -5,26 +5,21 @@ import os
 from typing import Dict, Any, List, Union
 import warnings
 import pickle
-from datetime import datetime
-from tqdm import tqdm
 import dice_ml
 #from dice_ml.utils import helpers
 import pandas as pd
 import numpy as np
 #import wandb
+from cf_generator_base import BaseCounterfactualGenerator
 
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")
 
-class CounterfactualGenerator:
+class CFGDice(BaseCounterfactualGenerator):
     """Handles counterfactual generation for different models using DiCE."""
 
     def __init__(self, config: Dict):
-        self.config = config
-        self.base_path = os.path.join(config['paths']['counterfactuals'],
-                                      "cf_generators",
-                                      'dice')
-        os.makedirs(self.base_path, exist_ok=True)
+        super().__init__(config)
 
         # Paths for DiCE components
         self.paths = {
@@ -41,6 +36,9 @@ class CounterfactualGenerator:
                                               {}).get('method',
                                                       'genetic')
         print(f"Using method: {self._method}")
+    def _get_method_name(self) -> str:
+        """Return the name of the counterfactual generation method."""
+        return 'dice'
 
     def _save_component(self, component: Any, path: str) -> None:
         """Save a DiCE component to disk."""
@@ -57,7 +55,7 @@ class CounterfactualGenerator:
             return component
         return None
 
-    def setup_dice(self,
+    def setup(self,
                   reference_data: pd.DataFrame,
                   # feature_names: List[str],
                   continuous_features: List[str],
@@ -87,8 +85,10 @@ class CounterfactualGenerator:
     def _setup_model_components(self, model: Any, model_name: str) -> None:
         """Setup and save DiCE model and explainer for a specific model."""
         # Create model-specific paths
-        model_path =     " "#os.path.join(self.base_path, f'dice_model_{model_name}.pkl')
-        explainer_path = " "#os.path.join(self.base_path, f'dice_explainer_{model_name}.pkl')
+        model_path =     os.path.join(self.base_path, 
+                f'dice_model_{self.config.get("dataset_name")}_{model_name}_{self._method}.pkl')
+        explainer_path = os.path.join(self.base_path, 
+            f'dice_explainer_{self.config.get("dataset_name")}_{model_name}_{self._method}.pkl')
 
         # Try to load existing components
         self._dice_models[model_name] = self._load_component(model_path)
@@ -122,7 +122,7 @@ class CounterfactualGenerator:
                                dt_name = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
         """Generate counterfactuals for all models and calibration samples."""
         if self._dice_data is None:
-            raise ValueError("DiCE not initialized. Call setup_dice first.")
+            raise ValueError("DiCE not initialized. Call setup first.")
 
         # Ensure X_calibration is a DataFrame
         if isinstance(X_calibration, np.ndarray):
@@ -175,15 +175,3 @@ class CounterfactualGenerator:
             # self._log_final_metrics(model_name, model_results)
 
         return results
-
-    def _save_results(self, results: List[Dict[str, Any]], model_name: str, dt_name:str) -> None:
-        """Save counterfactual results locally."""
-        save_dir = os.path.join(self.config['paths']['counterfactuals'], model_name,dt_name)
-        
-        os.makedirs(save_dir, exist_ok=True)
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join(save_dir, f"cf_results_{timestamp}_{self._method}")
-
-        np.savez(filepath, cfs=results, allow_pickle=True)
-        print(f"Saved results to {filepath}")

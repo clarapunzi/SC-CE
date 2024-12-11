@@ -5,7 +5,7 @@ data:
     path: "data/raw/folktables/"
 
 wandb:
-  project_name: "counterfactuals-experiment-2"
+  project_name: "counterfactuals-debug"
   tags: ["nested-cv", "counterfactuals"]
 
 paths:

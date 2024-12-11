@@ -8,7 +8,7 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
-from src.counterfactual_generator import CounterfactualGenerator
+from src.counterfactual_generator import CFGDice
 from src.utils import load_config, check_file_exists
 
 
@@ -28,7 +28,7 @@ def run_pipeline(
     # Initialize components
     data_processor = DataProcessor(config=config)
     model_trainer = ModelTrainer(config=config)
-    cf_generator = CounterfactualGenerator(config=config)
+    cf_generator = CFGDice(config=config)
     ########################################
     ######### Data Processing Phase ########
     ########################################
@@ -83,7 +83,7 @@ def run_pipeline(
     target_name = data_processor.target_name
     # we add the target variable to the reference set
     reference_set[target_name] = splits['y_train']
-    cf_generator.setup_dice(
+    cf_generator.setup(
         reference_data=reference_set,
         #feature_names=feat_names,
         continuous_features = feat_names,
