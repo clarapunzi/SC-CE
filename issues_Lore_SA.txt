@@ -1,0 +1,9 @@
+in the script lore.py:
+No need for two identical classes if what they differ for is the generation strategy. Just pass the generation strategy as a parameter to the constructor.
+
+In the testing script under the test folder (Lore_sa/test/test_lore.py) only the TabularRandomGeneratorLore is tested.
+The other generator is not tested.
+
+Overall why the generation has been splitted into serveral scripts? 
+Furthermore they don't even follow a naming convention.
+It would be better to have a single script with the range of choices for the generation strategy? This would make the code more readable and easier to maintain.
