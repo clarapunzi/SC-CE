@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from src.counterfactual_generator import CFGDice
+from src.counterfactual_generator import DiceCFGenerator
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
 from src.utils import load_config,check_file_exists,print_balancing,write_time
@@ -39,7 +39,7 @@ print_balancing(splits['y_test'])
 print("Calibration balance: \n")
 print_balancing(splits['y_calibration'])
 
-cf_generator = CFGDice(config=config)
+cf_generator = DiceCFGenerator(config=config)
 cf_generator.setup(reference_data=pd.DataFrame([], columns=splits['X_train'].columns),
                         continuous_features=splits['X_train'].columns,
                         categorical_features=[],

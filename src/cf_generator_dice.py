@@ -15,7 +15,7 @@ from cf_generator_base import BaseCounterfactualGenerator
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")
 
-class CFGDice(BaseCounterfactualGenerator):
+class DiceCFGenerator(BaseCounterfactualGenerator):
     """Handles counterfactual generation for different models using DiCE."""
 
     def __init__(self, config: Dict):

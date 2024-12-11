@@ -8,7 +8,7 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
-from src.counterfactual_generator import CFGDice
+from src.counterfactual_generator import DiceCFGenerator
 from src.utils import load_config, check_file_exists
 
 
@@ -28,7 +28,7 @@ def run_pipeline(
     # Initialize components
     data_processor = DataProcessor(config=config)
     model_trainer = ModelTrainer(config=config)
-    cf_generator = CFGDice(config=config)
+    cf_generator = DiceCFGenerator(config=config)
     ########################################
     ######### Data Processing Phase ########
     ########################################
