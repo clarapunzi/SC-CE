@@ -10,7 +10,7 @@ import dice_ml
 #from dice_ml.utils import helpers
 import pandas as pd
 import numpy as np
-from cf_generator_base import CFGeneratorBase
+from src.cf_generator_base import CFGeneratorBase
 #import wandb
 try:
     os.chdir(os.path.join("src",
@@ -27,8 +27,6 @@ try:
     from src.LORE_sa.lore_sa.lore import (TabularRandomGeneratorLore,
                                           TabularGeneticGeneratorLore,
                                            TabularGeneticProbaGeneratorLore)
-
-
     from src.LORE_sa.lore_sa.surrogate import DecisionTreeSurrogate
 except ImportError:
     print("Could not import LORE_sa")

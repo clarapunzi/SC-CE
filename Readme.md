@@ -6,7 +6,7 @@ finding the best threshold!
 ### remeber that for adding the submodules you have to 
 git submodule add link/to/submodule
 ### and after
-git submodule init
+git submodule init \n
 
 git submodule update
 

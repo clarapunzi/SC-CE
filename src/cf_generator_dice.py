@@ -10,12 +10,12 @@ import dice_ml
 import pandas as pd
 import numpy as np
 #import wandb
-from cf_generator_base import BaseCounterfactualGenerator
+from cf_generator_base import CFGeneratorBase
 
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")
 
-class DiceCFGenerator(BaseCounterfactualGenerator):
+class DiceCFGenerator(CFGeneratorBase):
     """Handles counterfactual generation for different models using DiCE."""
 
     def __init__(self, config: Dict):

@@ -9,7 +9,7 @@ import numpy as np
 import os
 from datetime import datetime
 
-class BaseCounterfactualGenerator(ABC):
+class CFGeneratorBase(ABC):
     """Abstract base class for counterfactual generation implementations."""
     
     def __init__(self, config: Dict):
