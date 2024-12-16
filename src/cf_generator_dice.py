@@ -10,7 +10,7 @@ import dice_ml
 import pandas as pd
 import numpy as np
 #import wandb
-from cf_generator_base import CFGeneratorBase
+from .cf_generator_base import CFGeneratorBase
 
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")

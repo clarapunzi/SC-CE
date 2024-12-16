@@ -11,3 +11,9 @@ src/inner_cross_val_OLD.py
 data/*
 *.OUT
 plots/*
+# Other files
+cmaps.ipynb
+L2LoRe.jpg
+xRobe.png
+
+

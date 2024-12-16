@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
 def plot_confusion_matrix(y_true, y_pred, class_labels=None, cmap='RdPu'):
     # Compute confusion matrix
@@ -63,3 +64,32 @@ def plot_confusion_matrix(y_true, y_pred, class_labels=None, cmap='RdPu'):
 
     plt.tight_layout()
     plt.show()
+def test_cmap (colorm):
+    """
+    Test the colormap
+    """
+    # create a colormap for the correlation
+    # test the colormap
+    plt.clf()
+    plt.figure(figsize=(6,5))
+    cmap = colorm
+    random_data = np.random.rand(10000)*2-1
+    colors = cmap(random_data)
+    plt.scatter(np.arange(len(random_data)),random_data,c=random_data,cmap=cmap,vmin=-1,vmax=1)
+    plt.colorbar()
+    plt.show()
+
+# buid a colormap for the correlation that is whiteish for absolute values smaller than 0.7, and then goes fastly (not linearly) to the extremes
+def build_cmap(t=0.7,c1="blue",c2="white",c3="red"):
+    
+    # Define colors: blue -> white -> red
+    colors = [c1, c2,c2, c3]
+    threshold = t
+    # Define positions for colors (notice double white for sharp transition)
+    positions = (np.array([-1, -threshold, threshold, 1])+1)/2
+    
+    return LinearSegmentedColormap.from_list('custom_corr', list(zip(positions, colors)))
+
+gold_map  = build_cmap(0.7,'#3c6b5e', '#fff1d9','#deb062')
+gold_map_r  = build_cmap(0.7,'#deb062', '#fff1d9','#3c6b5e')
+#test_cmap(gold_map)
