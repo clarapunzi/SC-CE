@@ -99,6 +99,11 @@ class LoreCFGenerator(CFGeneratorBase):
         for model_name, model in models.items():
             print(f"Generating counterfactuals for model {model_name}")
             counterfactuals[model_name] = []
+            # it should be enough to parallelize this loop in order to speed up the process
+            # to parallelize, the function should have:
+            # 1. a single input argument, which is an element of the iterable
+            # 2. the function should return the result of the computation
+
             for i in range(len(X_calibration)):
                 instance = X_calibration.iloc[i]
                 instance = instance.to_dict()
@@ -109,4 +114,6 @@ class LoreCFGenerator(CFGeneratorBase):
                 instance = instance[0]
                 cf = self.lore.generate_counterfactual(instance, num_cf)
                 counterfactuals[model_name].append(cf)
+
+        return counterfactuals
                                  
