@@ -8,7 +8,8 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
-from src.counterfactual_generator import DiceCFGenerator
+from src.cf_generator_dice import DiceCFGenerator
+from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
 
 
