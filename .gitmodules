@@ -1,6 +1,3 @@
-[submodule "src/LORE_sa"]
-	path = src/LORE_sa
-	url = https://github.com/kdd-lab/LORE_sa
 [submodule "src/LORE_ext"]
 	path = src/LORE_ext
 	url = https://github.com/rinziv/LORE_ext
