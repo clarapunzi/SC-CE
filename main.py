@@ -8,7 +8,7 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
-from src.cf_generator_dice import DiceCFGenerator
+from src.cf_generator_dice import DiceCFGenerator, CFGeneratorBase
 from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
 
@@ -29,7 +29,11 @@ def run_pipeline(
     # Initialize components
     data_processor = DataProcessor(config=config)
     model_trainer = ModelTrainer(config=config)
-    cf_generator = DiceCFGenerator(config=config)
+    cf_generator = None
+    if cf_method == "dice":
+        cf_generator = DiceCFGenerator(config=config)
+    elif cf_method == "lore":
+        cf_generator = LoreCFGenerator(config=config)
     ########################################
     ######### Data Processing Phase ########
     ########################################
@@ -95,15 +99,14 @@ def run_pipeline(
         models=models,
         X_calibration=splits['X_calibration'][:],
         y_calibration=splits['y_calibration'][:],
-        cf_method=cf_method,
         num_cf=8,
         dt_name=dataset_name,
     )
     return counterfactuals
 
 if __name__ == "__main__":
-    
+
     run_pipeline(
         dataset_name="german_credit",
-        cf_method="dice"
+        cf_method="lore"
     )

@@ -1,3 +1,6 @@
 [submodule "src/LORE_ext"]
 	path = src/LORE_ext
 	url = https://github.com/rinziv/LORE_ext
+[submodule "src/LORE_sa"]
+	path = src/LORE_sa
+	url = https://github.com/valevalerio/LORE_sa

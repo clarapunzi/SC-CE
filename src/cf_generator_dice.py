@@ -117,7 +117,6 @@ class DiceCFGenerator(CFGeneratorBase):
                                models: Dict[str, Any],
                                X_calibration: Union[pd.DataFrame, np.ndarray],
                                y_calibration: Union[pd.Series, np.ndarray],
-                               cf_method: str,
                                num_cf: int = 32,
                                dt_name = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
         """Generate counterfactuals for all models and calibration samples."""
@@ -134,7 +133,7 @@ class DiceCFGenerator(CFGeneratorBase):
         results = {}
         # Process each model
         for model_name, model in models.items():
-            print(f"Generating {num_cf} CFs with with method: {cf_method} ({self._method}) for model: {model_name}")
+            print(f"Generating {num_cf} CFs with with method: ({self._method}) for model: {model_name}")
 
             # Setup model-specific components if not already done
             self._setup_model_components(model, model_name)

@@ -26,6 +26,7 @@ class CFGeneratorBase(ABC):
             self._get_method_name()
         )
         os.makedirs(self.base_path, exist_ok=True)
+        self._method = "abstract"
 
     @abstractmethod
     def _get_method_name(self) -> str:
@@ -54,7 +55,6 @@ class CFGeneratorBase(ABC):
                                models: Dict[str, Any],
                                X_calibration: Union[pd.DataFrame, np.ndarray],
                                y_calibration: Union[pd.Series, np.ndarray],
-                               cf_method: str,
                                num_cf: int = 32,
                                dt_name: str = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
         """
@@ -86,8 +86,7 @@ class CFGeneratorBase(ABC):
         os.makedirs(save_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join(save_dir, f"cf_results_{timestamp}_{self._get_method_name()}")
-        
+        filepath = os.path.join(save_dir, f"cf_results_{self._get_method_name()}_{self._method}_{timestamp}")
         np.savez(filepath, cfs=results, allow_pickle=True)
         print(f"Saved results to {filepath}")
 

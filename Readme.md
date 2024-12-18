@@ -19,3 +19,9 @@ TODO:
 - [ ] add income dataset
 - [ ] add the lore genetic - partitioning
 - [ ] save the counterfactuals as well as the rule and the tree for each sample
+
+
+
+### The main idea is to use the counterfactuals to learn the best threshold for the classifier
+
+Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality and rejection_classification_report. 

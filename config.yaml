@@ -46,4 +46,4 @@ counterfactuals:
   growing_spheres:
     lambda_param: 0.1
   lore:
-    samples: 1000
+    method: "random"
