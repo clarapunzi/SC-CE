@@ -9,9 +9,9 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
 from src.cf_generator_dice import DiceCFGenerator, CFGeneratorBase
-from src.cf_generator_lore import LoreCFGenerator
+#from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
-
+import argparse
 
 def run_pipeline(
     dataset_name: str,
@@ -32,8 +32,8 @@ def run_pipeline(
     cf_generator = None
     if cf_method == "dice":
         cf_generator = DiceCFGenerator(config=config)
-    elif cf_method == "lore":
-        cf_generator = LoreCFGenerator(config=config)
+    #elif cf_method == "lore":
+    #    cf_generator = LoreCFGenerator(config=config)
     ########################################
     ######### Data Processing Phase ########
     ########################################
@@ -105,8 +105,19 @@ def run_pipeline(
     return counterfactuals
 
 if __name__ == "__main__":
-
+    parser = argparse.ArgumentParser(description="Run the counterfactual generation pipeline")
+    parser.add_argument("--dataset", type=str,
+                        help="The name of the dataset to use",default="german_credit")
+    parser.add_argument("--cf_method", type=str,
+                        help="The counterfactual generation method to use",default="dice")
+    parser.add_argument("--config_path", type=str,
+                        help="The path to the configuration file",default="config.yaml")
+    args = parser.parse_args()
     run_pipeline(
-        dataset_name="german_credit",
-        cf_method="lore"
+        dataset_name=args.dataset,
+        cf_method=args.cf_method,
+        config_path=args.config_path
     )
+    # to try another dataset/method for the counterfactuals generation
+    # just change the config file or use directly another config file
+    # the results are saved with the timestamps so that they can be compared (they should not be that different though)

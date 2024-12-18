@@ -14,6 +14,7 @@ from src.cf_generator_base import CFGeneratorBase
 try:
     os.chdir(os.path.join("src",
                         "LORE_sa"))
+    print(os.getcwd())
     from src.LORE_sa.lore_sa.lore import Lore
     from src.LORE_sa.lore_sa.bbox import AbstractBBox
 
