@@ -11,29 +11,18 @@ import pandas as pd
 import numpy as np
 from src.cf_generator_base import CFGeneratorBase
 #import wandb
-try:
-    os.chdir(os.path.join("src",
-                        "LORE_sa"))
-    print(os.getcwd())
-    from src.LORE_sa.lore_sa.lore import Lore
-    from src.LORE_sa.lore_sa.bbox import AbstractBBox
+#############################################
+################# LORE imports ##############
+#############################################
+from src.LORE_sa.lore_sa import sklearn_classifier_bbox
 
 
-    from src.LORE_sa.lore_sa.bbox import sklearn_classifier_bbox
-
-    from src.LORE_sa.lore_sa.dataset import TabularDataset
-    from src.LORE_sa.lore_sa.neighgen import GeneticGenerator, RandomGenerator
-    from src.LORE_sa.lore_sa.encoder_decoder import ColumnTransformerEnc
-    from src.LORE_sa.lore_sa.lore import (TabularRandomGeneratorLore,
-                                          TabularGeneticGeneratorLore,
-                                           TabularGeneticProbaGeneratorLore)
-    from src.LORE_sa.lore_sa.surrogate import DecisionTreeSurrogate
-except ImportError:
-    print("Could not import LORE_sa")
-    raise
-finally:
-    os.chdir("..")
-    os.chdir("..")
+from src.LORE_sa.lore_sa.dataset import TabularDataset
+from src.LORE_sa.lore_sa.encoder_decoder import ColumnTransformerEnc
+from src.LORE_sa.lore_sa.lore import (TabularRandomGeneratorLore,
+                                        TabularGeneticGeneratorLore,
+                                        TabularRandGenGeneratorLore)
+# from src.LORE_sa.lore_sa.surrogate import DecisionTreeSurrogate
 
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")
@@ -73,6 +62,7 @@ class LoreCFGenerator(CFGeneratorBase):
             categorical_features: List of categorical feature names
             target_name: Name of the target column
         """
+        reference_data[target_name] = reference_data[target_name].astype('category')
         self.dataset = TabularDataset(reference_data,
                                       target_name,
                                       continuous_features,
@@ -101,7 +91,7 @@ class LoreCFGenerator(CFGeneratorBase):
                         bbox=sklearn_classifier_bbox.sklearnBBox(model),
                          dataset=self.dataset)
         if self._method == 'random_gen':
-            self._explainers[model_name] = TabularRandomGeneratorLore(
+            self._explainers[model_name] = TabularRandGenGeneratorLore(
                         bbox=sklearn_classifier_bbox.sklearnBBox(model),
                          dataset=self.dataset)
 

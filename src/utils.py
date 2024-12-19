@@ -42,19 +42,27 @@ def print_balancing(set_of):
     print(percentages)
 
 from sklearn.metrics import confusion_matrix
-def plot_confusion_ascii(y_true, y_pred):
+def plot_confusion_ascii(y_true, y_pred,ascii_set= -1):
     """
     Plot a simple ASCII confusion matrix with class precision.
     Each cell shows a single character representing the percentage.
     """
-    chars = ' ░▒▓█'
-    chars = ' ·∙●■'  # Alternative
-    chars = ' .:;█'
-    chars = ' .oO@'
+    chars = []
+    # Alternative
+    chars.append(' ░▒▓█')
+    chars.append(' .:;█')
+    chars.append(' ·∙●■')
+    chars.append(' .∙o●O@')
+    chars.append('▁▂▃▄▅▆▇█')        # Rising blocks gradient
+    chars.append(' .∙•○●◐◑◈■█')         # Circle to square gradient
+    chars.append('0123456789')           # Digits
+    chars.append('⠂.⠆⠖⠶⣦⣶⣾⣿')     # Braille
+    chars.append('▁⣀⣄⣤⣦⣶⣷⣾⣿')       # Braille
+    chars = chars[ascii_set]
     cm = confusion_matrix(y_true, y_pred)
     cm = cm.astype('float') / cm.sum(axis=0)
     for i, row in enumerate(cm):
-        print(''.join(chars[int(cell * len(chars))] for cell in row))
+        print(''.join(chars[int(cell * (len(chars)-1))] for cell in row))
     #print(''.join(str(i) for i in range(2)))
 
 def write_time(s):

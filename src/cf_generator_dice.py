@@ -2,6 +2,7 @@
 Handles counterfactual generation for different models using DiCE, LoRE and other methods.
 """
 import os
+import time
 from typing import Dict, Any, List, Union
 import warnings
 import pickle
@@ -11,6 +12,7 @@ import pandas as pd
 import numpy as np
 #import wandb
 from .cf_generator_base import CFGeneratorBase
+from src.utils import write_time
 
 warnings.filterwarnings("ignore",
     message="X has feature names, but StandardScaler was fitted without feature names")
@@ -139,12 +141,14 @@ class DiceCFGenerator(CFGeneratorBase):
             self._setup_model_components(model, model_name)
 
             model_results = []
+            start = time.time()
             # Generate counterfactuals for entire dataset
             cf_result = self._explainers[model_name].generate_counterfactuals(
                 X_calibration,
                 total_CFs=num_cf,
                 desired_class="opposite"
             )
+            end = time.time()
 
             # Process results
             model_results = [{
@@ -161,8 +165,11 @@ class DiceCFGenerator(CFGeneratorBase):
             # for every instance in the calibration set check how many counterfactuals valid were generated over he num_cf
             for idx in range(len(X_calibration)):
                 print("sample",idx,np.round((model.predict(X_calibration.iloc[[idx]])!=model_results[idx]['counterfactuals']["target"].values).sum()/num_cf,2))
-
-
+            fancy_time = write_time(end-start)
+            print(f"Time to generate counterfactuals: {fancy_time} seconds")
+            # append on file the time to generate the counterfactuals
+            with open(os.path.join(self.base_path,"time_to_generate.txt"),"a+",encoding='utf-8') as f:
+                f.write(f"{model_name} {fancy_time}\n")
             # Store results for this model
             results[model_name] = model_results
 

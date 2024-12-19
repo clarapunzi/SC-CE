@@ -8,12 +8,11 @@ TODO:
 - [ ] save the counterfactuals as well as the rule and the tree for each sample
 - [ ] add GROWING SPHERES
 
-TODO dataset:
+TODO datasets:
 - [ ] Add tge winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [ ] add income dataset
 
 TODO refactorings:
-- [ ] understand the imports
 - [ ] improve the eval notebook 
 - [ ] create class SelectiveClassifier, which will be a wrapper for the classifier and will have the method predict_proba and predict. 
 
@@ -21,6 +20,9 @@ TODO refactorings:
 
 DONE:
 - [x] add the lore genetic - partitioning
+dataset:
+refactorings:
+- [x] understand the imports
 
 
 

@@ -11,6 +11,9 @@ wandb:
 paths:
   models: "models/"
   counterfactuals: "counterfactuals/"
+  
+
+  
 
 models:
   rf_params:
@@ -40,7 +43,7 @@ counterfactuals:
   num_counterfactuals: 8
   dice:
     proximity_weight: 0.5
-    method: "kdtree"
+    method: "random"
   growing_spheres:
     lambda_param: 0.1
   lore:

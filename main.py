@@ -8,8 +8,8 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
-from src.cf_generator_dice import DiceCFGenerator, CFGeneratorBase
-#from src.cf_generator_lore import LoreCFGenerator
+from src.cf_generator_dice import DiceCFGenerator
+from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
 import argparse
 
@@ -29,11 +29,12 @@ def run_pipeline(
     # Initialize components
     data_processor = DataProcessor(config=config)
     model_trainer = ModelTrainer(config=config)
+    num_cf = config.get("counterfactuals", {}).get("num_counterfactuals", 8)
     cf_generator = None
     if cf_method == "dice":
         cf_generator = DiceCFGenerator(config=config)
-    #elif cf_method == "lore":
-    #    cf_generator = LoreCFGenerator(config=config)
+    elif cf_method == "lore":
+        cf_generator = LoreCFGenerator(config=config)
     ########################################
     ######### Data Processing Phase ########
     ########################################
@@ -99,7 +100,7 @@ def run_pipeline(
         models=models,
         X_calibration=splits['X_calibration'][:],
         y_calibration=splits['y_calibration'][:],
-        num_cf=8,
+        num_cf=num_cf,
         dt_name=dataset_name,
     )
     return counterfactuals
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str,
                         help="The name of the dataset to use",default="german_credit")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="dice")
+                        help="The counterfactual generation method to use",default="lore")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()
@@ -118,6 +119,8 @@ if __name__ == "__main__":
         cf_method=args.cf_method,
         config_path=args.config_path
     )
+    
     # to try another dataset/method for the counterfactuals generation
     # just change the config file or use directly another config file
-    # the results are saved with the timestamps so that they can be compared (they should not be that different though)
+    # the results are saved with the timestamps so that they can be compared
+    #  (they should not be that different though)
