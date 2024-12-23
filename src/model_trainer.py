@@ -80,10 +80,14 @@ class ModelTrainer:
         y_test: np.ndarray,
         dataset_name: str,
         n_folds: int = 10,
-        config: Dict = None
+        config: Dict = None,
+        which_models = "all"
     ) -> Dict[str, Any]:
         """Train all models using nested CV or load if already trained."""
         trained_models = {}
+        if which_models != "all":
+            self.model_configs = {k: v for k, v in self.model_configs.items() if k in which_models}
+
         for model_name, model_info in self.model_configs.items():
             print(f"Processing {model_name} for {dataset_name}")
 

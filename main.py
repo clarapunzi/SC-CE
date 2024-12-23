@@ -3,8 +3,7 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 1. Data Processing: Load and preprocess the dataset.
 2. Model Training: Train a model on the dataset.
 3. Counterfactual Generation: Generate counterfactuals for the model.
-4. Counterfactual Evaluation: Evaluate the counterfactuals generated. (Not implemented yet)
-5. 
+3.1 Save the counterfactuals to a file.
 """
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
@@ -16,7 +15,8 @@ import argparse
 def run_pipeline(
     dataset_name: str,
     cf_method: str,
-    config_path: str = "config.yaml"
+    config_path: str = "config.yaml",
+    which_models = "all"
     ):
     """ The main pipeline to run the counterfactual generation process
         Args:
@@ -66,7 +66,8 @@ def run_pipeline(
             splits['X_test'],
             splits['y_test'],
             dataset_name=dataset_name,
-            n_folds=5
+            n_folds=5,
+            which_models = which_models
         )
 
     # Models can now be used for counterfactual generation
@@ -96,6 +97,7 @@ def run_pipeline(
         categorical_features=[],#data_processor.categorical_features,
         target_name=target_name,
     )
+    print("Generating counterfactuals")
     counterfactuals = cf_generator.generate_counterfactuals(
         models=models,
         X_calibration=splits['X_calibration'][:],
@@ -117,9 +119,9 @@ if __name__ == "__main__":
     run_pipeline(
         dataset_name=args.dataset,
         cf_method=args.cf_method,
-        config_path=args.config_path
+        config_path=args.config_path,
+        which_models=["mlp"]
     )
-    
     # to try another dataset/method for the counterfactuals generation
     # just change the config file or use directly another config file
     # the results are saved with the timestamps so that they can be compared

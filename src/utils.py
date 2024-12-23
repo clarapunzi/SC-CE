@@ -54,10 +54,9 @@ def plot_confusion_ascii(y_true, y_pred,ascii_set= -1):
     chars.append(' ·∙●■')
     chars.append(' .∙o●O@')
     chars.append('▁▂▃▄▅▆▇█')        # Rising blocks gradient
-    chars.append(' .∙•○●◐◑◈■█')         # Circle to square gradient
+    chars.append(' ∙•○●◐◑◈■█')         # Circle to square gradient
     chars.append('0123456789')           # Digits
-    chars.append('⠂.⠆⠖⠶⣦⣶⣾⣿')     # Braille
-    chars.append('▁⣀⣄⣤⣦⣶⣷⣾⣿')       # Braille
+    chars.append('▁.⠆⠖⠶⣦⣶⣾⣿')     # Braille
     chars = chars[ascii_set]
     cm = confusion_matrix(y_true, y_pred)
     cm = cm.astype('float') / cm.sum(axis=0)
@@ -75,3 +74,33 @@ def write_time(s):
     else:
         s = np.round(s/60/60,2)
         return str(s)+"h"
+
+
+
+from sklearn.metrics import accuracy_score
+
+def evaluate_coverage_accuracy(model, splits, percentages,selective_classifier_name="PLG"):
+    """
+    Evaluate the accuracy of selective classifiers at specified coverage percentages.
+
+    Parameters:
+        model: A trained PlugInRule or similar model with a `predict` method and a `qband` method.
+        splits: A dictionary containing 'X_test' and 'y_test' as test data and true labels.
+        percentages: A list of percentages for which to calculate accuracy.
+
+    Returns:
+        A dictionary where keys are coverage percentages and values are accuracy scores.
+    """
+    selected_plg = model.qband(splits['X_test'])  # Get acceptance levels for the test set
+    y_test = splits['y_test'].values.reshape(-1)  # Reshape true labels for indexing
+    X_test = splits['X_test']  # Test features
+
+    results = {}
+    for pct in percentages:
+        threshold = int((100 - pct) / 100 * len(selected_plg))  # Map percentage to threshold
+        mask = selected_plg >= threshold  # Create mask for selected cases
+        accuracy = accuracy_score(y_test[mask], model.predict(X_test[mask]))
+        results[pct] = accuracy
+        print(f"{selective_classifier_name}: predicting {pct}% of cases: {accuracy:.4f}")
+
+    return results

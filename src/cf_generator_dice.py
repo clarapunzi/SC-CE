@@ -164,12 +164,14 @@ class DiceCFGenerator(CFGeneratorBase):
 
             # for every instance in the calibration set check how many counterfactuals valid were generated over he num_cf
             for idx in range(len(X_calibration)):
-                print("sample",idx,np.round((model.predict(X_calibration.iloc[[idx]])!=model_results[idx]['counterfactuals']["target"].values).sum()/num_cf,2))
+                print("sample",idx,
+                      np.round((model.predict(X_calibration.iloc[[idx]])!=model_results[idx]['counterfactuals']["target"].values)
+                               .sum()/num_cf,2))
             fancy_time = write_time(end-start)
             print(f"Time to generate counterfactuals: {fancy_time} seconds")
             # append on file the time to generate the counterfactuals
-            with open(os.path.join(self.base_path,"time_to_generate.txt"),"a+",encoding='utf-8') as f:
-                f.write(f"{model_name} {fancy_time}\n")
+            with open(os.path.join(self.base_path,"time_to_generate_dice.txt"),"a+",encoding='utf-8') as f:
+                f.write(f"{model_name} {fancy_time} {num_cf} {self._method}\n")
             # Store results for this model
             results[model_name] = model_results
 
