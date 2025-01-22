@@ -12,7 +12,7 @@ from datetime import datetime
 class CFGeneratorBase(ABC):
     """Abstract base class for counterfactual generation implementations."""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict,dataset_name:str):
         """
         Initialize the counterfactual generator.
         
@@ -27,6 +27,7 @@ class CFGeneratorBase(ABC):
         )
         os.makedirs(self.base_path, exist_ok=True)
         self._method = "abstract"
+        self.dataset_name = dataset_name
 
     @abstractmethod
     def _get_method_name(self) -> str:
@@ -56,7 +57,8 @@ class CFGeneratorBase(ABC):
                                X_calibration: Union[pd.DataFrame, np.ndarray],
                                y_calibration: Union[pd.Series, np.ndarray],
                                num_cf: int = 32,
-                               dt_name: str = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
+                               dt_name: str = 'dataset_name',
+                               set_name: str = "") -> Dict[str, List[Dict[str, Any]]]:
         """
         Generate counterfactuals for given models and instances.
         
@@ -73,7 +75,7 @@ class CFGeneratorBase(ABC):
         """
         pass
 
-    def _save_results(self, results: List[Dict[str, Any]], model_name: str, dt_name: str) -> None:
+    def save_results(self, results: List[Dict[str, Any]], model_name: str, dt_name: str,set_name = "") -> None:
         """
         Save generated counterfactuals to disk.
         
@@ -86,7 +88,9 @@ class CFGeneratorBase(ABC):
         os.makedirs(save_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filepath = os.path.join(save_dir, f"cf_results_{self._get_method_name()}_{self._method}_{timestamp}")
+        if set_name != "":
+            set_name = f"_{set_name}"
+        filepath = os.path.join(save_dir, f"cf_results_{self._get_method_name()}_{self._method}{set_name}_{timestamp}")
         np.savez(filepath, cfs=results, allow_pickle=True)
         print(f"Saved results to {filepath}")
 

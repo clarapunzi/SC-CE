@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import numpy as np
 import category_encoders as ce
+from src.toy_dataset import generate_toy
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""
 
@@ -25,6 +26,8 @@ class DataProcessor:
             return self._load_german_credit()
         elif dataset_name == "folktables":
             return self._load_folktables()
+        if dataset_name == "toy_dataset":
+            return self._load_toy_dataset()
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -63,6 +66,8 @@ class DataProcessor:
             return self._preprocess_german_credit(data, fit)
         elif dataset_name == "folktables":
             return self._preprocess_folktables(data, fit)
+        elif dataset_name == "toy_dataset":
+            return self._preprocess_toy(data, fit)
 
     def _preprocess_german_credit(self,
                                 data: pd.DataFrame,
@@ -70,7 +75,6 @@ class DataProcessor:
         """Preprocess German Credit dataset."""
         # Copy data to avoid modifying original
         df = data.copy()
-
         # Extract target
         df["target"] = df["default"]
         del df["default"]
@@ -109,6 +113,37 @@ class DataProcessor:
         """Preprocess Folktables dataset."""
         # Implement similar preprocessing for Folktables
         return
+
+    def _load_toy_dataset(self) -> pd.DataFrame:
+        X,y = generate_toy()
+        self.target_name = "Toy_Class"
+        self.feature_names = ['Feature1', 'Feature2']
+        # create a dataframe for the toy dataset
+        features = pd.DataFrame(X, columns=self.feature_names)
+        features[self.target_name] = y
+        return features
+    def _preprocess_toy(self,
+                          data: pd.DataFrame,
+                            fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
+        """Preprocess Toy dataset."""
+        # Copy data to avoid modifying original
+        df = data.copy()
+        # Extract target
+        target = df[self.target_name]
+        features = df.drop(self.target_name, axis=1)
+        # they are all numerical
+        num_cols = features.columns
+        # Handle numerical features
+        if fit:
+            for col in num_cols:
+                self.scalers[col] = StandardScaler()
+                features[col] = self.scalers[col].fit_transform(features[[col]])
+        else:
+            for col in num_cols:
+                if col in self.scalers:
+                    features[col] = self.scalers[col].transform(features[[col]])
+        return features, target
+
 
     def split_data(self,
                   features: pd.DataFrame,

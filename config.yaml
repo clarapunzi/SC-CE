@@ -3,6 +3,8 @@ data:
     path: "data/raw/german_credit.csv"
   folktables:
     path: "data/raw/folktables/"
+  toy_data:
+    path: "."
 
 wandb:
   project_name: "counterfactuals-debug"

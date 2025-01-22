@@ -32,9 +32,11 @@ def run_pipeline(
     num_cf = config.get("counterfactuals", {}).get("num_counterfactuals", 8)
     cf_generator = None
     if cf_method == "dice":
-        cf_generator = DiceCFGenerator(config=config)
+        cf_generator = DiceCFGenerator(config=config,
+                                       dataset_name=dataset_name)
     elif cf_method == "lore":
-        cf_generator = LoreCFGenerator(config=config)
+        cf_generator = LoreCFGenerator(config=config,
+                                       dataset_name=dataset_name)
     ########################################
     ######### Data Processing Phase ########
     ########################################
@@ -51,12 +53,6 @@ def run_pipeline(
     else:
         print("Loading existing dataset")
         splits = data_processor.load_splits(dataset_name)
-
-    # print the balance of the splits
-    print("Train balance: \n", splits['y_train'].value_counts())
-    print("Test balance: \n", splits['y_test'].value_counts())
-    print("Calibration balance: \n", splits['y_calibration'].value_counts())
-
     ########################################
     ######### Model Training Phase #########
     # Train or load all models
@@ -104,6 +100,15 @@ def run_pipeline(
         y_calibration=splits['y_calibration'][:],
         num_cf=num_cf,
         dt_name=dataset_name,
+        set_name="calibration"
+    )
+    counterfactuals = cf_generator.generate_counterfactuals(
+        models=models,
+        X_calibration=splits['X_test'][:],
+        y_calibration=splits['y_test'][:],
+        num_cf=num_cf,
+        dt_name=dataset_name,
+        set_name="test"
     )
     return counterfactuals
 
@@ -112,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str,
                         help="The name of the dataset to use",default="german_credit")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="lore")
+                        help="The counterfactual generation method to use",default="dice")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()
@@ -120,9 +125,12 @@ if __name__ == "__main__":
         dataset_name=args.dataset,
         cf_method=args.cf_method,
         config_path=args.config_path,
-        which_models=["mlp"]
+        which_models=["mlp","random_forest","xgboost","lgbm"]
     )
+
     # to try another dataset/method for the counterfactuals generation
     # just change the config file or use directly another config file
     # the results are saved with the timestamps so that they can be compared
     #  (they should not be that different though)
+
+    print("FINISHED the computation","for the dataset",args.dataset,"with the method",args.cf_method)

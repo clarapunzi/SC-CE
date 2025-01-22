@@ -83,13 +83,13 @@ def perform_single_cv(
         # Log metrics for this validation fold
         wandb.log({
             "fold": fold_idx,
-            f"{dataset_name}/f1_weighted_{fold_idx}": val_metric_f1[best_idx],
-            f"{dataset_name}/balanced_accuracy_{fold_idx}": val_metric_b_acc[best_idx],
-            f"{dataset_name}/accuracy_{fold_idx}": val_metric_acc[best_idx],
+            f"f1_weighted_{fold_idx}": val_metric_f1[best_idx],
+            f"balanced_accuracy_{fold_idx}": val_metric_b_acc[best_idx],
+            f"accuracy_{fold_idx}": val_metric_acc[best_idx],
         })
         fold_metrics.append(metrics)
     wandb.log({
-            f"{dataset_name}/validation_time": train_time
+            "validation_time": train_time
         })
 
 

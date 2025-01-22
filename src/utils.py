@@ -97,10 +97,75 @@ def evaluate_coverage_accuracy(model, splits, percentages,selective_classifier_n
 
     results = {}
     for pct in percentages:
-        threshold = int((100 - pct) / 100 * len(selected_plg))  # Map percentage to threshold
+        threshold = np.percentile(selected_plg, 100 - pct)
+
         mask = selected_plg >= threshold  # Create mask for selected cases
         accuracy = accuracy_score(y_test[mask], model.predict(X_test[mask]))
         results[pct] = accuracy
         print(f"{selective_classifier_name}: predicting {pct}% of cases: {accuracy:.4f}")
 
     return results
+
+
+# create: rejected_list is a 0/1 list with 1 at rejected indices
+# qband is a list with levels of acceptance: for j in range(len(target_coverage)), qband>=j is rejected
+# qband >= i means setting to 0 (accept) all samples above i
+
+
+def get_rejected_list(qband, i):
+    '''
+    This function creates a list of 0/1 values, where 1 means that the sample is rejected
+    qband: list of quantiles
+    i: the threshold for the quantile
+    '''
+    return [0 if qband >= i else 1 for qband in qband]
+
+from typing import Any, Dict
+from OLD_src.MyLoreSA.metrics import nonrejected_accuracy, classification_quality, rejection_quality, rejection_classification_report
+def compute_selective_metrics(model_key: str,
+    selected_data: np.ndarray,
+    classifier_type: str,
+    selective_classifier: Any,
+    splits: Dict,
+    target_coverages: np.ndarray,
+    n: int,
+    metric_dicts: Dict[str, Dict]):
+    '''
+    This function calculates the selective metrics for a given model and selective technique
+    model_key: the key of the model in the models dictionary
+    selected_data: the data selected by the selective technique
+    classifier_type: the type of the classifier
+    plug_in_ruler: the plug-in ruler of the model
+    splits: the splits of the data
+    coverage_index: the index of the coverage
+    n: the number of samples
+    metric_dicts: the dictionary of the metrics
+    '''
+    # assume the selective classifier is fitted
+    k = model_key
+    rejected_array = metric_dicts["rejected_by_coverage"][k][classifier_type]
+    classification_array = metric_dicts["classification_quality_dict"][k][classifier_type]
+    rejection_array = metric_dicts["rejection_quality_dict"][k][classifier_type]
+    included_array = metric_dicts["included_samples"][k][classifier_type]
+    for i,t_c in enumerate(target_coverages):
+        #rejected list is a 0/1 list with 1 at rejected indices
+        rejected_list = np.array(get_rejected_list(selected_data, i))
+        (correct_nonrejected,
+        correct_rejected,
+        miscl_nonrejected,
+        miscl_rejected,
+            df_plg) = rejection_classification_report(splits['y_test'].values.reshape(-1),
+                                                      selective_classifier.predict(splits['X_test']), 
+                                                      rejected_list)
+        acc_nrej = nonrejected_accuracy(correct_nonrejected, miscl_nonrejected)
+        class_quality = classification_quality(correct_nonrejected, miscl_rejected, n)
+        rej_quality = rejection_quality(correct_rejected, correct_nonrejected, miscl_rejected, miscl_nonrejected)
+            #print(f"model {k}: non-rejected accuracy: {AN_plg:.2f}, {i}")
+            #print(f"model {k}: classification quality: {CQ:.2f}, {i}")
+            #print(f"model {k}: rejection quality: {RQ:.2f}, {i}")
+
+        rejected_array[i] = acc_nrej
+        classification_array[i] = class_quality
+        rejection_array[i] = rej_quality
+        included_array[i] = np.sum(1-rejected_list)/len(rejected_list)
+

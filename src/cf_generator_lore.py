@@ -32,8 +32,8 @@ class LoreCFGenerator(CFGeneratorBase):
     Handles counterfactual generation for different models using Lore.
     It implements the CFGeneratorBase class.
     """
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+    def __init__(self, config: Dict[str, Any],dataset_name:str):
+        super().__init__(config,dataset_name)
         self.config = config
         self.dataset = None
         self.encoder = None
@@ -100,7 +100,8 @@ class LoreCFGenerator(CFGeneratorBase):
                                  X_calibration: Union[pd.DataFrame, np.ndarray],
                                  y_calibration: Union[pd.Series, np.ndarray],
                                  num_cf: int = 32,
-                                 dt_name: str = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
+                                 dt_name: str = 'dataset_name',
+                                 set_name:str = '') -> Dict[str, List[Dict[str, Any]]]:
         """
         Generate counterfactuals for given models and instances.
         """
@@ -146,14 +147,14 @@ class LoreCFGenerator(CFGeneratorBase):
             results[model_name] = model_results
             results_rt[model_name] = rules_and_trees
             # Save the trees, the rules and the counterfactuals
-            self._save_results(results=model_results,
+            self.save_results(results=model_results,
                                results_rt=rules_and_trees,
                                model_name=model_name,
                                dt_name=dt_name)
 
         return results
 
-    def _save_results(self, results,results_rt, model_name, dt_name):
+    def save_results(self, results,results_rt, model_name, dt_name):
         """
         Save the results of the counterfactual generation.
         """

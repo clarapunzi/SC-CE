@@ -20,12 +20,12 @@ warnings.filterwarnings("ignore",
 class DiceCFGenerator(CFGeneratorBase):
     """Handles counterfactual generation for different models using DiCE."""
 
-    def __init__(self, config: Dict):
-        super().__init__(config)
+    def __init__(self, config: Dict,dataset_name:str):
+        super().__init__(config,dataset_name)
 
         # Paths for DiCE components
         self.paths = {
-            'data': os.path.join(self.base_path, 'dice_data.pkl'),
+            'data': os.path.join(self.base_path, self.dataset_name+'_dice_data.pkl'),
             'model': os.path.join(self.base_path, 'dice_model.pkl'),
             'explainer': os.path.join(self.base_path, 'dice_explainer.pkl')
         }
@@ -88,10 +88,10 @@ class DiceCFGenerator(CFGeneratorBase):
         """Setup and save DiCE model and explainer for a specific model."""
         # Create model-specific paths
         model_path =     os.path.join(self.base_path, 
-                f'dice_model_{self.config.get("dataset_name")}_{model_name}_{self._method}.pkl')
+                f'dice_model_{self.dataset_name}_{model_name}_{self._method}.pkl')
         explainer_path = os.path.join(self.base_path, 
-            f'dice_explainer_{self.config.get("dataset_name")}_{model_name}_{self._method}.pkl')
-
+            f'dice_explainer_{self.dataset_name}_{model_name}_{self._method}.pkl')
+        print("trying to load explainer model from",explainer_path)
         # Try to load existing components
         self._dice_models[model_name] = self._load_component(model_path)
         self._explainers[model_name] = self._load_component(explainer_path)
@@ -120,7 +120,8 @@ class DiceCFGenerator(CFGeneratorBase):
                                X_calibration: Union[pd.DataFrame, np.ndarray],
                                y_calibration: Union[pd.Series, np.ndarray],
                                num_cf: int = 32,
-                               dt_name = 'dataset_name') -> Dict[str, List[Dict[str, Any]]]:
+                               dt_name = 'dataset_name',
+                               set_name = "") -> Dict[str, List[Dict[str, Any]]]:
         """Generate counterfactuals for all models and calibration samples."""
         if self._dice_data is None:
             raise ValueError("DiCE not initialized. Call setup first.")
@@ -143,6 +144,7 @@ class DiceCFGenerator(CFGeneratorBase):
             model_results = []
             start = time.time()
             # Generate counterfactuals for entire dataset
+            print(X_calibration)
             cf_result = self._explainers[model_name].generate_counterfactuals(
                 X_calibration,
                 total_CFs=num_cf,
@@ -171,13 +173,14 @@ class DiceCFGenerator(CFGeneratorBase):
             print(f"Time to generate counterfactuals: {fancy_time} seconds")
             # append on file the time to generate the counterfactuals
             with open(os.path.join(self.base_path,"time_to_generate_dice.txt"),"a+",encoding='utf-8') as f:
-                f.write(f"{model_name} {fancy_time} {num_cf} {self._method}\n")
+                f.write(f"{model_name} {fancy_time} {num_cf} {self._method} {set_name}\n")
             # Store results for this model
             results[model_name] = model_results
 
             # Save results locally
-            self._save_results(model_results, model_name,
-                               dt_name=dt_name)
+            self.save_results(model_results, model_name,
+                               dt_name=dt_name,
+                               set_name=set_name)
 
             # Log final metrics to W&B
             # self._log_final_metrics(model_name, model_results)

@@ -92,7 +92,7 @@ class PlugInRule(ClassifierMixin, BaseEstimator):
             return np.digitize(confs, self.thetas)
         else:
             raise ValueError(
-                "The model is not fitted yet. Please call the fit method before."
+                "The model is not Calibrated yet. Please call the fit method before."
             )
 
 
