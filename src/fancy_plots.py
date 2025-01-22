@@ -93,3 +93,36 @@ def build_cmap(t=0.7,c1="blue",c2="white",c3="red"):
 gold_map  = build_cmap(0.7,'#3c6b5e', '#fff1d9','#deb062')
 gold_map_r  = build_cmap(0.7,'#deb062', '#fff1d9','#3c6b5e')
 #test_cmap(gold_map)
+
+def plot_decision_space(my_model,model_name='',
+                        draw_confidence=True,
+                        X=None,y=None):
+    """
+        This funciton is used to plot the decision space of a model
+    """
+    x_min, x_max = X[:, 0].min() - 0.25, X[:, 0].max() + 0.25
+    y_min, y_max = X[:, 1].min() - 0.25, X[:, 1].max() + 0.25
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.01),
+                            np.arange(y_min, y_max, 0.01))
+
+    if draw_confidence:
+        Z = np.max(my_model.predict_proba(np.c_[xx.ravel(), yy.ravel()]),axis=1)
+    else:
+        Z = my_model.predict(np.c_[xx.ravel(), yy.ravel()])
+
+    Z = Z.reshape(xx.shape)
+    plt.figure(figsize=(10, 8))
+    cmap = plt.cm.YlOrBr.reversed()
+    plt.contourf(xx, yy, Z, alpha=0.8, cmap=cmap,vmax=1.0,vmin=0.5,levels=np.linspace(0.5,1,11))
+    plt.colorbar()
+    # for the legend use the shaded color and the class labels: "predicted class i"
+    #for i in range(0, len(set(y))):
+    #    plt.scatter([], [], s=100, label="Class "+str(i),color=plt.cm.RdYlBu(i/len(set(y))),vmin=0,vmax=1)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.RdYlBu, edgecolor='black',vmin=0,vmax=1,alpha=0.2)
+    plt.xlabel('X1')
+    plt.ylabel('X2')
+    plt.legend()
+    if len(model_name)>0:
+        model_name = ": "+model_name+'(Best)'
+    plt.title('Decision Space of model'+str(model_name))
+    plt.show()

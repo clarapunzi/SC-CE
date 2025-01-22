@@ -13,17 +13,19 @@ TODO datasets:
 
 TODO refactorings:
 - [ ] create class SelectiveClassifier for L2Lore, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
+- [ ] add the metrics as tables! (still need to have python function to produce the latex table)
 - [ ] add ALL the remaining metrics (2)
-- [ ] improve the eval notebook (add plots for the metrics (1 for each blackbox))
-- [ ] add the metrics as tables!
+- [ ] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 
 DONE:
 - [x] add the lore genetic - partitioning
 dataset:
+- [x] add toydataset
 refactorings:
 - [x] add classification 
 - [x] understand the imports
 - [x] add the metric to the evaluation notebook (non rejected accuracy)
+- [x] refactored the plot and the computation of the metrics
 
 
 # IDEA

@@ -173,7 +173,7 @@ class DiceCFGenerator(CFGeneratorBase):
             print(f"Time to generate counterfactuals: {fancy_time} seconds")
             # append on file the time to generate the counterfactuals
             with open(os.path.join(self.base_path,"time_to_generate_dice.txt"),"a+",encoding='utf-8') as f:
-                f.write(f"{model_name} {fancy_time} {num_cf} {self._method} {set_name}\n")
+                f.write(f"{model_name} {fancy_time} {num_cf} {self._method} {set_name} {dt_name}\n")
             # Store results for this model
             results[model_name] = model_results
 
