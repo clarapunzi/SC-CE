@@ -11,10 +11,10 @@ from matplotlib.colors import LinearSegmentedColormap
 def plot_confusion_matrix(y_true, y_pred, class_labels=None, cmap='RdPu'):
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
-
+    
     # Convert to DataFrame for easier handling
     df_cm = pd.DataFrame(cm/cm.sum(1), index=class_labels, columns=class_labels)
-
+    
     # Calculate percentages
     cm_sum = np.sum(cm, axis=1, keepdims=True)
     cm_perc = cm / cm_sum.astype(float) * 100
@@ -30,15 +30,15 @@ def plot_confusion_matrix(y_true, y_pred, class_labels=None, cmap='RdPu'):
                 annot[i, j] = f'{c}\n{p:.2f}%'
 
     # Create a figure and axes
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     # Plot the heatmap
     sns.heatmap(df_cm, annot=annot, fmt='', cmap=cmap, cbar=False, ax=ax,annot_kws={"size": 18})
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0,fontsize=18)
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0,fontsize=18)
     # Customize the plot
-    ax.set_ylabel('Predicted',rotation=90,fontsize=20)
-    ax.set_xlabel('Actual',rotation=0,fontsize=20)
+    ax.set_ylabel('True Class',rotation=90,fontsize=20)
+    ax.set_xlabel('Predicted',rotation=0,fontsize=20)
     plt.title('Confusion Matrix')
 
     # Add sum rows and columns
@@ -47,19 +47,20 @@ def plot_confusion_matrix(y_true, y_pred, class_labels=None, cmap='RdPu'):
 
     # Add sum row
     ax.add_patch(plt.Rectangle((0, cm.shape[0]), cm.shape[1], 1, fill=False, edgecolor='gray', lw=2))
+    offset = 0.2
     for j in range(cm.shape[1]):
-        plt.text(j+0.5, cm.shape[0]+1, f"{sum_col[j]}\n{sum_col[j]/np.sum(sum_col)*100:.2f}%",
+        plt.text(j+0.5, cm.shape[0]+offset*2, f"{sum_col[j]}\n{sum_col[j]/np.sum(sum_col)*100:.2f}%",
                  ha="center", va="center",fontsize=18)
 
     # Add sum column
     ax.add_patch(plt.Rectangle((cm.shape[1], 0), 1, cm.shape[0], fill=False, edgecolor='gray', lw=2))
     for i in range(cm.shape[0]):
-        plt.text(cm.shape[1]+0.5, i+0.5, f"{sum_lin[i]}\n{sum_lin[i]/np.sum(sum_lin)*100:.2f}%",
+        plt.text(cm.shape[1]+offset, i+0.5, f"{sum_lin[i]}\n{sum_lin[i]/np.sum(sum_lin)*100:.2f}%",
                  ha="center", va="center",fontsize=18)
 
     # Add total sum
     ax.add_patch(plt.Rectangle((cm.shape[1], cm.shape[0]), 1, 1, fill=False, edgecolor='gray', lw=2))
-    plt.text(cm.shape[1]+0.5, cm.shape[0]+0.5, f"{np.sum(sum_lin)}\n100%",
+    plt.text(cm.shape[1]+offset, cm.shape[0]+offset, f"{np.sum(sum_lin)}\n100%",
                 ha="center", va="center",fontsize=18)
 
     plt.tight_layout()

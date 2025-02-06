@@ -4,3 +4,6 @@
 [submodule "src/LORE_sa"]
 	path = src/LORE_sa
 	url = https://github.com/valevalerio/LORE_sa
+[submodule "src/cp-ils"]
+	path = src/cp-ils
+	url = https://github.com/simonepiaggesi/cp-ils

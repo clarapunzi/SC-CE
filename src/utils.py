@@ -40,6 +40,7 @@ def print_balancing(set_of):
             "█"*int(perc)+" "*(total_squares-int(perc+old_perc))+"| class " + f"{v[i]}: {c[i]} "+f"({np.round(cs/(sum(c))*100,2)}%)\n"
         old_perc+=perc
     print(percentages)
+    return v,c
 
 from sklearn.metrics import confusion_matrix
 def plot_confusion_ascii(y_true, y_pred,ascii_set= -1):
