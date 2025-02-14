@@ -1,31 +1,51 @@
 # Learning to Reject with Counterfactual Data Augmentation
 finding the best threshold!
 
-TODO:
-- [ ] Separate the computation of the counterfactuals in chunks
-- [ ] save the counterfactuals as well as the rule and the tree for each sample
-- [ ] test the other lore generators (check the naming of the saved files)
-- [ ] add GROWING SPHERES
+The main script will perform a cross-fold validation and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
+``` python main.py --dataset german```
+
+The remaining part of the code is in the notebooks:
+
+To compute the distances of the counterfactuals, generated at te previous step
+- 1_compute_distances.ipynb
+
+To compute the distances of the counterfactuals generated at te previous step using the ILS method
+- 2_compute_latent_distances.ipynb
+
+To plot the distances and the correlation between the distances and the confidence of the classifier
+- 3_correlation_and_distances_plot.ipynb
+
+To wrap the classifiers and compute the metrics for the selective classifiers
+- 4_selective_classifiers.ipynb
+
+
 TODO datasets:
 - [ ] Add the winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [ ] add income dataset
 - [ ] add the adult dataset
+TODO:
+- [ ] Separate the computation of the counterfactuals in chunks
+- [ ] test the other lore generators (check the naming of the saved files)
+- [ ] save the counterfactuals as well as the rule and the tree for each sample
+- [ ] add GROWING SPHERES
 
 TODO refactorings:
-- [ ] create class SelectiveClassifier for L2Lore, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
 - [ ] add the metrics as tables! (still need to have python function to produce the latex table)
 - [ ] add ALL the remaining metrics (2)
-- [ ] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 
 DONE:
-- [x] add the lore genetic - partitioning
+- [x] add the lore genetic 
+- [x] add the ILS cf generator
 dataset:
 - [x] add toydataset
+- [x] add german credit
+- [x] create class SelectiveClassifier for CFDistRejector, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
 refactorings:
 - [x] add classification 
 - [x] understand the imports
 - [x] add the metric to the evaluation notebook (non rejected accuracy)
 - [x] refactored the plot and the computation of the metrics
+- [x] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 
 
 # IDEA

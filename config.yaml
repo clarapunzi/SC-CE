@@ -43,6 +43,9 @@ counterfactuals:
   dice:
     proximity_weight: 0.5
     method: "kdtree"
+  ils:
+    method: "latent"
+    dimentions: 2
   growing_spheres:
     lambda_param: 0.1
   lore:

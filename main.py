@@ -8,6 +8,7 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
 from src.cf_generator_dice import DiceCFGenerator
+from src.cf_generator_ils import IlsCFGenerator
 from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
 import argparse
@@ -34,6 +35,11 @@ def run_pipeline(
     if cf_method == "dice":
         cf_generator = DiceCFGenerator(config=config,
                                        dataset_name=dataset_name)
+    elif cf_method == "ils":
+        cf_generator = IlsCFGenerator(config=config,
+                                       dataset_name=dataset_name,
+                                       )
+
     elif cf_method == "lore":
         cf_generator = LoreCFGenerator(config=config,
                                        dataset_name=dataset_name)
@@ -96,16 +102,16 @@ def run_pipeline(
     print("Generating counterfactuals")
     counterfactuals = cf_generator.generate_counterfactuals(
         models=models,
-        X_calibration=splits['X_calibration'][:],
-        y_calibration=splits['y_calibration'][:],
+        X_calibration=splits['X_calibration'][:].copy(),
+        y_calibration=splits['y_calibration'][:].copy(),
         num_cf=num_cf,
         dt_name=dataset_name,
         set_name="calibration"
     )
     counterfactuals = cf_generator.generate_counterfactuals(
         models=models,
-        X_calibration=splits['X_test'][:],
-        y_calibration=splits['y_test'][:],
+        X_calibration=splits['X_test'][:].copy(),
+        y_calibration=splits['y_test'][:].copy(),
         num_cf=num_cf,
         dt_name=dataset_name,
         set_name="test"
@@ -117,7 +123,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str,
                         help="The name of the dataset to use",default="german_credit")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="dice")
+                        help="The counterfactual generation method to use",default="ils")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()

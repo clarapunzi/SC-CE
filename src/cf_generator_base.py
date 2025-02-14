@@ -2,12 +2,13 @@
 This module contains the abstract base class for counterfactual generation implementations.
 It defines the interface for counterfactual generation methods and provides a common setup for saving results.
 """
+import os
+from datetime import datetime
+import pickle
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Union
 import pandas as pd
 import numpy as np
-import os
-from datetime import datetime
 
 class CFGeneratorBase(ABC):
     """Abstract base class for counterfactual generation implementations."""
@@ -104,3 +105,17 @@ class CFGeneratorBase(ABC):
             model_name: Name of the model
         """
         pass
+    def _save_component(self, component: Any, path: str) -> None:
+        """Save a component to disk."""
+        with open(path, 'wb') as f:
+            pickle.dump(component, f)
+        print(f"Saved component to {path}")
+
+    def _load_component(self, path: str) -> Any:
+        """Load a component from disk."""
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                component = pickle.load(f)
+            print(f"Loaded component from {path}")
+            return component
+        return None

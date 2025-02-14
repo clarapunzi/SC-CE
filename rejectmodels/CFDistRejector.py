@@ -53,7 +53,8 @@ class CFDistRejector(ClassifierMixin, BaseEstimator):
         # instead of taking the quantiles uses the gamma function
         if use_gamma:
             from scipy import stats
-            fit_alpha, fit_loc, fit_beta=stats.gamma.fit(target_distances)
+            # Fit the gamma distribution but remove the non finite values
+            fit_alpha, fit_loc, fit_beta=stats.gamma.fit(target_distances[np.isfinite(target_distances)])
             self.deltas = [stats.gamma.ppf(q, fit_alpha, loc=fit_loc, scale=fit_beta) for q in self.quantiles]
 
     def predict_proba(self, X):

@@ -41,22 +41,6 @@ class DiceCFGenerator(CFGeneratorBase):
     def _get_method_name(self) -> str:
         """Return the name of the counterfactual generation method."""
         return 'dice'
-
-    def _save_component(self, component: Any, path: str) -> None:
-        """Save a DiCE component to disk."""
-        with open(path, 'wb') as f:
-            pickle.dump(component, f)
-        print(f"Saved component to {path}")
-
-    def _load_component(self, path: str) -> Any:
-        """Load a DiCE component from disk."""
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                component = pickle.load(f)
-            print(f"Loaded component from {path}")
-            return component
-        return None
-
     def setup(self,
                   reference_data: pd.DataFrame,
                   # feature_names: List[str],
