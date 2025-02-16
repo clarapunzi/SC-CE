@@ -45,7 +45,7 @@ counterfactuals:
     method: "kdtree"
   ils:
     method: "latent"
-    dimentions: 2
+    search_best: True
   growing_spheres:
     lambda_param: 0.1
   lore:
