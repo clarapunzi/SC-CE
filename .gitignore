@@ -11,10 +11,13 @@ src/inner_cross_val_OLD.py
 *.OUT
 *.out
 plots/*
-# For the datasets
-data/*
-#*.npz
-# Fot he models, commented to parallelize the execution on multiple machines
+# For the datasets in raw conditions
+data/raw/*
+
+# commented to parallelize the execution on multiple machines
+# The processed files, for the moment commented
+# *.npz
+# Fot he models, 
 #*.pkl
 
 # The counterfactuals generated
