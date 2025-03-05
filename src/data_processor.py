@@ -28,8 +28,20 @@ class DataProcessor:
             return self._load_folktables()
         if dataset_name == "toy_dataset":
             return self._load_toy_dataset()
+        if dataset_name == "adult48k":
+            return self._load_adult48k()
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
+    def _load_adult48k(self) -> pd.DataFrame:
+        """Load adult48k dataset."""
+        path = self.config['data']['adult48k']['path']
+        try:
+            df = pd.read_csv(path)
+            print(f"Loaded adult48k dataset with shape {df.shape}")
+            return df
+        except Exception as e:
+            print(f"Error loading adult48k dataset: {str(e)}")
+            raise
 
     def _load_german_credit(self) -> pd.DataFrame:
         """Load German Credit dataset."""
@@ -68,7 +80,11 @@ class DataProcessor:
             return self._preprocess_folktables(data, fit)
         elif dataset_name == "toy_dataset":
             return self._preprocess_toy(data, fit)
-
+        elif dataset_name == "adult48k":
+            return self._preprocess_adult48k(data)
+        else:
+            raise ValueError(f"Unknown dataset: {dataset_name}")
+        return data
     def _preprocess_german_credit(self,
                                 data: pd.DataFrame,
                                 fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
@@ -173,15 +189,52 @@ class DataProcessor:
             random_state=random_state,
             stratify=y_temp
         )
+        if X_calibration.shape[0] > 1000:
+            # copy the old calibration set into a "X_calibration_full"
+            X_calibration_full = X_calibration
+            y_calibration_full = y_calibration
+            # create a smaller calibration set, cappped at 200
 
-        splits = {
+            X_calibration, _, y_calibration, _ = train_test_split(
+                X_calibration_full,
+                y_calibration_full,
+                train_size=300,
+                random_state=random_state,
+                stratify=y_calibration_full
+            )
+            # same for the test set
+            X_test_full = X_test
+            y_test_full = y_test
+            X_test, _, y_test, _ = train_test_split(
+                X_test_full,
+                y_test_full,
+                train_size=500,
+                random_state=random_state,
+                stratify=y_test_full
+            )
+            splits = {
+                'X_train': X_train,
+                'y_train': y_train,
+                'X_test': X_test,
+                'y_test': y_test,
+                'X_calibration': X_calibration,
+                'y_calibration': y_calibration,
+                'X_calibration_full': X_calibration_full,
+                'y_calibration_full': y_calibration_full,
+                'X_test_full': X_test_full,
+                'y_test_full': y_test_full
+            }
+
+        else:
+
+            splits = {
             'X_train': X_train,
             'y_train': y_train,
             'X_test': X_test,
             'y_test': y_test,
             'X_calibration': X_calibration,
             'y_calibration': y_calibration
-        }
+            }
 
         # Log split sizes
         for name, data in splits.items():
@@ -234,3 +287,90 @@ class DataProcessor:
             splits[split_name] = pd.DataFrame(loaded['patterns'],
                         columns=feature_names if split_name.startswith('X') else None)
         return splits
+
+    def _preprocess_adult48k(self,data: pd.DataFrame,fit:bool=True
+                            ) -> Tuple[pd.DataFrame, pd.Series]:
+        """Preprocess German Credit dataset."""
+        # Copy data to avoid modifying original
+        # Extract target
+        dt = data.copy()
+        dt["target"] = dt["class"]
+        del dt["class"]
+        #print()
+        print(dt.columns)
+        #print(dt.columns)
+        names = dt.columns
+        # Map Ages, Education, Workclass, and Weekly-Hours to smaller category set.
+        
+        #special_category = 'occupation'
+        #print(special_category)
+        #print(dt[special_category].values)
+        dt.loc[dt['occupation']=='Armed-Forces','occupation'] = 'Protective-serv'
+        dt.loc[dt['workclass'].isin(['State-gov', 'Federal-gov', 'Local-gov']),
+            'employment-type'] = 'Government'
+        dt.loc[dt['workclass'].isin(['Self-emp-not-inc', 'Self-emp-inc']),
+            'employment-type'] = 'Self-Employed'
+        dt.loc[dt['workclass'].isin(['Private']),
+            'employment-type'] = 'Privately-Employed'
+        #special_category = 'employment-type'
+        #print(special_category)
+        #print(dt[special_category].values)
+        #print(names)
+        dt['education-num'] = dt['education-num'].values.astype(int)
+        #special_category = 'education-num'
+        #print(special_category)
+        #print(dt[special_category].values)
+        #print(type(dt[special_category].values[0]))
+        #print(dt['education-num'].isin([8]))
+        dt.loc[dt['education-num'].isin([2,3,4,5,6,7,8]),'education'] = 'Less than High School'
+        dt.loc[dt['education-num'].isin([ 9,10]), 'education'] = 'High School'
+        dt.loc[dt['education-num'].isin([11,12]), 'education'] = 'Associates'
+        dt.loc[dt['education-num'].isin([13]),    'education'] = 'Bachelors'
+        dt.loc[dt['education-num'].isin([14]),    'education'] = 'Masters'
+        dt.loc[dt['education-num'].isin([15,16]), 'education'] = 'Pro'
+        #education is now categorical
+        numeric_features_idx = [0,10,11,12]
+        x_float = np.array(dt.iloc[:,numeric_features_idx]).astype(np.float32)
+        y = np.array(dt.iloc[:,14])#np.array(dt.iloc[1:,1])
+        #Normalization of data
+        x_float = (x_float - np.mean(x_float,axis=0)) / np.std(x_float,axis=0)
+        y[y==' >50K'] = 1
+        y[y==' <=50K'] = 0
+        y = y.astype(np.intc)
+        categorical_features_idx = [1,3,5,6,7,8,9,13]
+        categorical_features = np.array(dt.iloc[:,categorical_features_idx])
+
+        categorical_features = np.array([])
+        cat_values = {}
+        for cat_feat_idx in categorical_features_idx:
+            x_c = dt.iloc[:,cat_feat_idx]
+            x_c_values = set(x_c)
+            if fit:
+                #print(names[catFeatIdx],len(x_c_values))
+                str_data = [str(e) for e in x_c]
+                target_encoder = ce.TargetEncoder()
+                target_encoder.fit(str_data,y)
+                xtargenc = target_encoder.transform([str(e) for e in x_c]).to_numpy()
+                categorical_features = np.hstack([categorical_features,xtargenc]) if categorical_features.size else xtargenc
+                feat_name = "P(t="+str(1)+"|"+names[cat_feat_idx]+")"
+                cat_values[feat_name] = np.unique(xtargenc)
+                #print(feat_name,cat_values[feat_name],)
+                cat_values[feat_name] = {c_val:target_encoder.transform([c_val])[0].to_numpy().astype(float)[0] for c_val in sorted(dt.iloc[:,cat_feat_idx].unique())}
+                #print(feat_name,cat_values[feat_name],)
+            else:
+                one_hot_feats_names = []
+                onehot = np.zeros((x_c.shape[0],len(set(x_c))))
+                cat_feat_2_idx = {k:i for i,k in enumerate(x_c_values)}
+
+                for i,cat_val in enumerate(x_c):
+                    onehot[i,cat_feat_2_idx[cat_val]]=1
+                    one_hot_feats_names.append("is "+cat_val)
+                categorical_features = np.hstack([categorical_features ,onehot]) if categorical_features.size else onehot
+        if fit:
+            names = np.concatenate([names[numeric_features_idx],names[categorical_features_idx]])
+        else:
+            names = np.concatenate([names[numeric_features_idx],one_hot_feats_names])
+        features = np.hstack([x_float,categorical_features])
+        self.target_name = "Income"
+        
+        return pd.DataFrame(features, columns=names), pd.Series(y)

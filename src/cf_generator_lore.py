@@ -63,10 +63,10 @@ class LoreCFGenerator(CFGeneratorBase):
             target_name: Name of the target column
         """
         reference_data[target_name] = reference_data[target_name].astype('category')
-        self.dataset = TabularDataset(reference_data,
-                                      target_name,
-                                      continuous_features,
-                                      categorical_features)
+        self.dataset = TabularDataset(data=reference_data,
+                                      class_name = target_name,
+                                      categorial_columns=categorical_features,
+                                      ordinal_columns=None)
         #self.encoder = ColumnTransformerEnc(self.dataset)
         #self.surrogate = DecisionTreeSurrogate()
         # To initialize the LORE object, as well as the RaondomGenerator
@@ -147,10 +147,10 @@ class LoreCFGenerator(CFGeneratorBase):
             results[model_name] = model_results
             results_rt[model_name] = rules_and_trees
             # Save the trees, the rules and the counterfactuals
-            self.save_results(results=model_results,
-                               results_rt=rules_and_trees,
-                               model_name=model_name,
-                               dt_name=dt_name)
+            # self.save_results(results=model_results,
+            #                   results_rt=rules_and_trees,
+            #                   model_name=model_name,
+            #                   dt_name=dt_name)
 
         return results
 

@@ -5,6 +5,8 @@ data:
     path: "data/raw/folktables/"
   toy_data:
     path: "."
+  adult48k:
+    path: "data/raw/adult48k.csv"
 
 wandb:
   project_name: "counterfactuals-debug"
