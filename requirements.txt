@@ -93,9 +93,6 @@ statsmodels==0.14.1
 sympy==1.13.1
 tenacity==9.0.0
 threadpoolctl==3.5.0
-torch==2.4.1+cu124
-torchaudio==2.4.1+cu124
-torchvision==0.19.1+cu124
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
