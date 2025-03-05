@@ -3,20 +3,41 @@ OLD_src/*
 cf_parameters.py
 */__pycache__/*
 *.pyc
-
 wandb*
+
 src/inner_cross_val_OLD.py
+
 *.LOG
-*.npz
-*.pkl
-data/*
 *.OUT
+*.out
 plots/*
+# For the datasets
+data/*
+#*.npz
+# Fot he models, commented to parallelize the execution on multiple machines
+#*.pkl
+
+# The counterfactuals generated
+cf_results*
+
+# the non-optimized interptable latent space
+not_optimal_ils
+
+# The distances computed
+debug/*
+
+# Diffused files for the experiments
+time_to_generate.txt
+time_to_generate_ils.txt
+best_hp.txt
+
 # Other files
+ablation*
 cmaps.ipynb
 L2LoRe.jpg
 xRobe.png
 xClaraERobe.png
+Update the imports.txt
 counterfactuals/cf_generators/dice/time_to_generate_dice.txt
 counterfactuals/cf_generators/dice/time_to_generate.txt
 toy_dataset.pdf
