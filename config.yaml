@@ -51,4 +51,4 @@ counterfactuals:
   growing_spheres:
     lambda_param: 0.1
   lore:
-    method: "random"
+    method: "genetic"
