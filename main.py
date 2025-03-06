@@ -7,13 +7,13 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 """
 from multiprocessing import Process
 import multiprocessing as mp
+import argparse
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
 from src.cf_generator_dice import DiceCFGenerator
 from src.cf_generator_ils import IlsCFGenerator
 from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
-import argparse
 
 
 def run_pipeline(
@@ -133,8 +133,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     import time
     start = time.time()
-    
-    
+
+
     # Create a list to keep track of processes
     processes = []
     model_types = ["mlp", "random_forest", "xgboost", "lgbm"]
@@ -145,24 +145,25 @@ if __name__ == "__main__":
                        args=(args.dataset, args.cf_method, args.config_path, [model_type]))
             p.start()
             processes.append(p)
-        
+
         # Wait for all processes to complete
         for p in processes:
             p.join()
-            
+
     except Exception as e:
         print(f"Error in parallel processing: {e}")
         # Terminate any remaining processes
         for p in processes:
             if p.is_alive():
                 p.terminate()
-    
+
     end = time.time()
-    print(f"FINISHED the computation in {end-start:.2f} seconds for the dataset {args.dataset} with the method {args.cf_method}")
+    print(f"FINISHED the computation in {end-start:.2f} seconds"+
+           f"for the dataset {args.dataset}"+
+           f"with the method {args.cf_method}")
     # run_pipeline(
     #     dataset_name=args.dataset,
     #     cf_method=args.cf_method,
     #     config_path=args.config_path,
     #     which_models=["mlp","random_forest","xgboost","lgbm"]
     # )
-    # print("FINISHED the computation","for the dataset",args.dataset,"with the method",args.cf_method)

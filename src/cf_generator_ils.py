@@ -4,26 +4,26 @@ Handles counterfactual generation for different models using Interpretable Laten
 import os
 from typing import Dict, Any, List, Union
 import warnings
-#from dice_ml.utils import helpers
+import time
+
 import pandas as pd
 import numpy as np
-import time
 from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
+from sklearn.model_selection import RandomizedSearchCV,StratifiedKFold
 import matplotlib.pyplot as plt
 
 from src.cf_generator_base import CFGeneratorBase
 from src.utils import write_time
 import src.cp_ils.cpils as cpils
 
-
 warnings.filterwarnings("ignore",
-                        message="X has feature names, but StandardScaler was fitted without feature names")
+                message="X has feature names, but StandardScaler was fitted without feature names")
 class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
     """
     Scikit-learn compatible wrapper for CP_ILS that preserves original data separation.
     Assumes training and calibration data are provided separately in a second wrapper.
-    This is needed since the original CP_ILS implementation does not support sklearn's fit(X, y) interface, nor other sklearn methods.
+    The original CP_ILS implementation does not support sklearn's fit(X, y) interface,
+    nor other sklearn methods (e.g. score, predict, etc.).
     """
     def __init__(self,
                   latent_dim=2,
@@ -37,6 +37,7 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         self.learning_rate = learning_rate
         self.sigma = sigma
         self.latent_model = None
+        # the following needs to be static for the hyperparameter search
         # self.base_model_ = model
         # self.X_validation_ = X_calibration
     def fit(self, X, y=None):
@@ -64,7 +65,7 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
             seed=42
         )
 
-        # You might want to use the validation loss for scoring
+        # Use the validation loss for scoring
         self.score_ = -self.losses_[1][-1]
         return self
 
@@ -83,12 +84,14 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         Returns the latent representation of the input data.
         """
         return self.latent_model.transform(X)
-    def get_counterfactuals(self, df_test, features_to_change, max_features_to_change,
-                                max_steps=50, n_cfs=-1, n_feats_sampled=5, topn_to_check=5, seed=42):
+    def get_counterfactuals(self, df_test, features_to_change,
+                            max_features_to_change,
+                            max_steps=50, n_cfs=-1, n_feats_sampled=5, topn_to_check=5, seed=42):
         """
         Returns the counterfactuals for the input data.
         """
-        return self.latent_model.get_counterfactuals(df_test, features_to_change, max_features_to_change,
+        return self.latent_model.get_counterfactuals(df_test, features_to_change,
+                                max_features_to_change,
                                 max_steps, n_cfs, n_feats_sampled, topn_to_check, seed)
     def set_params(self, **parameters):
         """
@@ -176,9 +179,9 @@ class IlsCFGenerator(CFGeneratorBase):
         if self._explainers[model_name] is None:
             print("Explainer model not found. Training new ILS.")
             if not self.search_best:
-                latent = CPILSSklearnWrapper(model, X_calibration, latent_dim=2,
-                                            max_epochs=2000, early_stopping=50, batch_size=32,
-                                            learning_rate=0.001, sigma=1.0)
+                latent = CPILSSklearnWrapper(latent_dim=2,
+                                        max_epochs=2000, early_stopping=50, batch_size=32,
+                                        learning_rate=0.001, sigma=1.0)
 
                 idx_num_cat = [] # indices of numerical and categorical features grouped by "one_hot"
                 #losses = latent.fit((X_train,X_calibration), idx_num_cat, seed=42)
@@ -195,6 +198,7 @@ class IlsCFGenerator(CFGeneratorBase):
 
                 # Initialize the wrapper with the model and data
                 class DoubleWrapper(CPILSSklearnWrapper):
+                    """Necessary double wrapper to perform hyperparameter search."""
                     # takse the same parameters as the original wrapper
                     def __init__(self,latent_dim=2,
                             max_epochs=2000, early_stopping=50, batch_size=32,
@@ -208,7 +212,7 @@ class IlsCFGenerator(CFGeneratorBase):
                                             learning_rate=learning_rate,
                                             sigma=sigma)
                 wrapper = DoubleWrapper()
-                from sklearn.model_selection import RandomizedSearchCV,StratifiedKFold
+
                 stratified_cv = StratifiedKFold(
                     n_splits=3,
                     shuffle=True,
@@ -221,7 +225,7 @@ class IlsCFGenerator(CFGeneratorBase):
                                             param_grid,
                                             cv = stratified_cv,
                                             n_jobs=n_jobs,
-                                            n_iter=20,
+                                            n_iter=20, # even too many
                                             random_state=42)
                 # The fit method will be called multiple times with different parameters
                 # y_train is not used in the fit method, it is optional also for the sklearn API
@@ -263,7 +267,7 @@ class IlsCFGenerator(CFGeneratorBase):
             print("Explainer model found. Loading existing ILS.")
             latent = self._explainers[model_name]
             print("Explainer model loaded.")
-    
+
     def generate_counterfactuals(self,
                                  models: Dict[str, Any],
                                  X_calibration: Union[pd.DataFrame, np.ndarray],
@@ -294,7 +298,8 @@ class IlsCFGenerator(CFGeneratorBase):
                 # instace has to be a dataframe
                 instance = instance.to_frame().T
                 label = y_calibration.loc[idx]
-                assert instance.shape[0] == 1,str(instance)+" has more than one row:"+str(instance.shape)
+                #assert instance.shape[0] == 1,str(instance)+
+                # " has more than one row:"+str(instance.shape)
                 cf_result = latent.get_counterfactuals(df_test=instance,
                                                     features_to_change=change_f,
                                                     max_features_to_change=max_f,
