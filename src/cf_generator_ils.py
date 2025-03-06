@@ -254,6 +254,8 @@ class IlsCFGenerator(CFGeneratorBase):
             fname = os.path.join('plots',
                                     self.dataset_name,
                                     f'losses_{model_name}_ils.pdf')
+            # make sure the directory exists
+            os.makedirs(os.path.dirname(fname), exist_ok=True)
             plt.savefig(fname)
             print(f"Losses plot saved to {fname}")
             plt.close()
