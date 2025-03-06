@@ -5,6 +5,8 @@ The main script to run the pipeline. The pipeline consists of three main phases:
 3. Counterfactual Generation: Generate counterfactuals for the model.
 3.1 Save the counterfactuals to a file.
 """
+from multiprocessing import Process
+import multiprocessing as mp
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer
 from src.cf_generator_dice import DiceCFGenerator
@@ -12,6 +14,7 @@ from src.cf_generator_ils import IlsCFGenerator
 from src.cf_generator_lore import LoreCFGenerator
 from src.utils import load_config, check_file_exists
 import argparse
+
 
 def run_pipeline(
     dataset_name: str,
@@ -119,6 +122,7 @@ def run_pipeline(
     return counterfactuals
 
 if __name__ == "__main__":
+    mp.set_start_method('spawn')
     parser = argparse.ArgumentParser(description="Run the counterfactual generation pipeline")
     parser.add_argument("--dataset", type=str,
                         help="The name of the dataset to use",default="adult48k")
@@ -129,7 +133,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     import time
     start = time.time()
-    from multiprocessing import Process
+    
     
     # Create a list to keep track of processes
     processes = []

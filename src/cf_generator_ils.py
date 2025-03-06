@@ -124,7 +124,7 @@ class IlsCFGenerator(CFGeneratorBase):
         self.dataset = None
 
         self.latent = None
-        
+
         self._explainers = {}
         self._method = config.get("counterfactuals",
                                      {}).get('ils',
@@ -170,7 +170,7 @@ class IlsCFGenerator(CFGeneratorBase):
         print("trying to load explainer model from",explainer_path)
         # Try to load existing component
         self._explainers[model_name] = self._load_component(explainer_path)
-        
+
         X_train = self.dataset.drop(columns=[self.target_name])
         y_train = self.dataset[self.target_name].values.reshape(-1,1)
         if self._explainers[model_name] is None:
@@ -196,8 +196,8 @@ class IlsCFGenerator(CFGeneratorBase):
                 # Initialize the wrapper with the model and data
                 class DoubleWrapper(CPILSSklearnWrapper):
                     # takse the same parameters as the original wrapper
-                    def __init__(self,latent_dim=2, 
-                            max_epochs=2000, early_stopping=70, batch_size=32, 
+                    def __init__(self,latent_dim=2,
+                            max_epochs=2000, early_stopping=50, batch_size=32,
                             learning_rate=0.001, sigma=1.0):
                         self.base_model_ = model
                         self.X_validation_ = X_calibration
@@ -210,15 +210,17 @@ class IlsCFGenerator(CFGeneratorBase):
                 wrapper = DoubleWrapper()
                 from sklearn.model_selection import RandomizedSearchCV,StratifiedKFold
                 stratified_cv = StratifiedKFold(
-                    n_splits=3, 
-                    shuffle=True, 
+                    n_splits=3,
+                    shuffle=True,
                     random_state=42
                 )
+                # get the number of cores from the system and divide by 4
+                n_jobs = os.cpu_count()//4
                 # Create GridSearchCV object
                 grid_search = RandomizedSearchCV(wrapper,
                                             param_grid,
                                             cv = stratified_cv,
-                                            n_jobs=-1,
+                                            n_jobs=n_jobs,
                                             n_iter=20,
                                             random_state=42)
                 # The fit method will be called multiple times with different parameters
@@ -230,13 +232,13 @@ class IlsCFGenerator(CFGeneratorBase):
                 print("Best parameters:", grid_search.best_params_)
                 print("the score of the search are:")
                 latent = grid_search.best_estimator_.latent_model
-                
+
                 losses = grid_search.best_estimator_.losses_
                 with open(os.path.join(self.base_path,"best_hp.txt"),"a+",encoding='utf-8') as f:
                     # remember the final new line
-                    f.write(f"{model_name} {self.dataset_name} latent_dim={latent.latent_dim} batch_size={latent.batch_size} lr={latent.learning_rate} sigma={latent.sigma} \n") 
+                    f.write(f"{model_name} {self.dataset_name} latent_dim={latent.latent_dim} batch_size={latent.batch_size} lr={latent.learning_rate} sigma={latent.sigma} \n")
 
-            
+
             self._explainers[model_name] = latent
             self._save_component(self._explainers[model_name], explainer_path)
             plt.figure(figsize=(8, 6))
@@ -248,7 +250,7 @@ class IlsCFGenerator(CFGeneratorBase):
             plt.yscale('log')
             plt.legend()
             plt.tight_layout()
-            
+
             fname = os.path.join('plots',
                                     self.dataset_name,
                                     f'losses_{model_name}_ils.pdf')
@@ -284,7 +286,7 @@ class IlsCFGenerator(CFGeneratorBase):
             max_f = len(change_f)
 
             # Generate counterfactuals for each instance
-        
+
             for idx,instance in X_calibration.iterrows():
                 # instace has to be a dataframe
                 instance = instance.to_frame().T
@@ -321,7 +323,7 @@ class IlsCFGenerator(CFGeneratorBase):
                                 dt_name=dt_name,
                                 set_name=set_name)
         print(f"Time to generate counterfactuals: {fancy_time} seconds")
-        
+
         # append on file the time to generate the counterfactuals
 
         return results
