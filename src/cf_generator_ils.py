@@ -263,6 +263,7 @@ class IlsCFGenerator(CFGeneratorBase):
             print("Explainer model found. Loading existing ILS.")
             latent = self._explainers[model_name]
             print("Explainer model loaded.")
+    
     def generate_counterfactuals(self,
                                  models: Dict[str, Any],
                                  X_calibration: Union[pd.DataFrame, np.ndarray],

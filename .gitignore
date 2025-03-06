@@ -11,17 +11,21 @@ src/inner_cross_val_OLD.py
 *.OUT
 *.out
 plots/*
-# For the datasets in raw conditions
+# For the datasets in raw conditions, keep it so that the cleaning is not done again
 data/raw/*
 
 # commented to parallelize the execution on multiple machines
-# The processed files, for the moment commented
+# The processed files (results and original data), for the moment commented
 # *.npz
-# Fot he models, 
-#*.pkl
+# For he models and the counterfactual generators
+# *.pkl
 
-# The counterfactuals generated
-cf_results*
+# The counterfactuals generated: 
+# comment this to see what have you generated locally and upload eventually
+# cf_results*
+
+# The rules and trees generated:
+*rules_and_trees*
 
 # the non-optimized interptable latent space
 not_optimal_ils
