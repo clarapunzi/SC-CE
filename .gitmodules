@@ -1,9 +1,6 @@
-[submodule "src/LORE_ext"]
-	path = src/LORE_ext
-	url = https://github.com/rinziv/LORE_ext
 [submodule "src/LORE_sa"]
 	path = src/LORE_sa
 	url = https://github.com/valevalerio/LORE_sa
-[submodule "src/cp-ils"]
-	path = src/cp-ils
-	url = https://github.com/simonepiaggesi/cp-ils
+[submodule "src/cp_ils"]
+	path = src/cp_ils
+	url = https://github.com/valevalerio/cp_ils
