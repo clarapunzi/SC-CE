@@ -1,5 +1,3 @@
-remove the debug* notebook files
-
 # Learning to Reject with Counterfactual Data Augmentation
 finding the best threshold!
 
@@ -16,7 +14,7 @@ To compute the distances of the counterfactuals generated at te previous step us
 
 To plot the distances and the correlation between the distances and the confidence of the classifier
 - 3_correlation_and_distances_plot.ipynb
-
+    
 To wrap the classifiers and compute the metrics for the selective classifiers
 - 4_selective_classifiers.ipynb
 
@@ -30,6 +28,7 @@ TODO:
 - [ ] add GROWING SPHERES
 
 TODO refactorings:
+- [ ] remove the debug* notebook files from main folder
 - [ ] add the metrics as tables! (still need to have python function to produce the latex table)
 - [ ] add ALL the remaining metrics (2)
 
