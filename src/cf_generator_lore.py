@@ -133,7 +133,6 @@ class LoreCFGenerator(CFGeneratorBase):
                 # counterfactuals_predictions
 
                 cf_cf_df = pd.DataFrame(cf_result["counterfactual_samples"])
-                cf_cf_df.columns = X_calibration.columns
                 cf_cf_df['target'] = cf_result["counterfactual_predictions"]
                 
                 res_dictionary = {'instance_idx': idx,
