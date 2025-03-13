@@ -1,10 +1,12 @@
+remove the debug* notebook files
+
 # Learning to Reject with Counterfactual Data Augmentation
 finding the best threshold!
 
 The main script will perform a cross-fold validation and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
 ``` python main.py --dataset german```
 
-The remaining part of the code is in the notebooks:
+The remaining part of the code is in the notebooks: (it should be refactored into scripts, for better reproducibility and scalability)
 
 To compute the distances of the counterfactuals, generated at te previous step
 - 1_compute_distances.ipynb
@@ -22,11 +24,9 @@ To wrap the classifiers and compute the metrics for the selective classifiers
 TODO datasets:
 - [ ] Add the winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [ ] add income dataset
-- [ ] add the adult dataset
 TODO:
 - [ ] Separate the computation of the counterfactuals in chunks
 - [ ] test the other lore generators (check the naming of the saved files)
-- [ ] save the counterfactuals as well as the rule and the tree for each sample
 - [ ] add GROWING SPHERES
 
 TODO refactorings:
@@ -36,10 +36,12 @@ TODO refactorings:
 DONE:
 - [x] add the lore genetic 
 - [x] add the ILS cf generator
+- [x] save the counterfactuals as well as the rule and the tree for each sample
 dataset:
 - [x] add toydataset
 - [x] add german credit
 - [x] create class SelectiveClassifier for CFDistRejector, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
+- [x] add the adult dataset
 refactorings:
 - [x] add classification 
 - [x] understand the imports
