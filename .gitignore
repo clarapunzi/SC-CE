@@ -16,9 +16,16 @@ data/raw/*
 
 # commented to parallelize the execution on multiple machines
 # The processed files (results and original data), for the moment commented
-# *.npz
-# For he models and the counterfactual generators
-# *.pkl
+*.npz
+
+# For counterfactual generators
+*lgbm.pkl
+*mlp.pkl
+*random_forest.pkl
+*xgboost.pkl
+
+
+
 
 # The counterfactuals generated: 
 # comment this to see what have you generated locally and upload eventually
