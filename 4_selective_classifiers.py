@@ -18,19 +18,20 @@ from tqdm import tqdm
 # Load necessary modules
 import src.utils as utl
 import src.fancy_plots as fplt
-from src.data_processor import DataProcessor
+from src.data_processor import DataProcessor, fancy_dataset_names
 from src.model_trainer import ModelTrainer
 from src.utils import compute_selective_metrics
 from OLD_src.Lib.L2R.code.model_agnostic import PlugInRule, PlugInRuleAUC, SCRoss
 import rejectmodels.CFDistRejector as cfdr
+import rejectmodels.CFTreeRejector as cftree
 
 def parse_arguments():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Selective Classifiers Analysis for Counterfactual Examples')
     parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset'],
                         help='Name of the dataset to analyze')
-    parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore'],
-                        help='Counterfactual generation method')
+    # parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore'],
+    #                    help='Counterfactual generation method')
     #parser.add_argument('--latent', action='store_true',
     #                    help='Use latent space for counterfactual generation')
     
@@ -170,6 +171,10 @@ def initialize_rejectors(models, splits):
     l2_rejectors_distances = {}
     selected_l2_rejectors_distances = {}
     
+    # tree based rejectors
+    tree_rejectors = {}
+    selected_tree_rejectors = {}
+
     # Dictionaries for metrics
     rejected_by_coverage = {}
     classification_quality_dict = {}
@@ -200,6 +205,7 @@ def initialize_rejectors(models, splits):
     # Initialize for distance-based rejectors
     for k in models.keys():
         l2_rejectors_distances[k] = {}
+        tree_rejectors[k] = {}
         for metric in focus_metrics:
             for m_type in ["min", "max", "mean"]:
                 for gamma_flag in [False, True]:
@@ -214,6 +220,19 @@ def initialize_rejectors(models, splits):
                     classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
                     rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
                     included_samples[k][selective_c] = np.zeros(target_coverages_n)
+
+                    # Initialize for tree-based rejectors
+                    selective_c = "CFTreeRejector_" + metric + "_" + m_type + ("_gamma" if gamma_flag else "")
+                    tree_rejectors[k][selective_c] = cftree.CFTreeRejector(
+                        model=models[k],
+                        coverages=target_coverages
+                    )
+                    # Initialize result dictionaries for this rejector
+                    rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
+                    rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
+                    included_samples[k][selective_c] = np.zeros(target_coverages_n)
+                    
     
     # Group metric dictionaries
     metric_dicts = {
@@ -229,7 +248,9 @@ def initialize_rejectors(models, splits):
         "plug_in_rulers_auc": plug_in_rulers_auc,
         "selected_plg_auc": selected_plg_auc,
         "l2_rejectors_distances": l2_rejectors_distances,
-        "selected_l2_rejectors_distances": selected_l2_rejectors_distances
+        "selected_l2_rejectors_distances": selected_l2_rejectors_distances,
+        "tree_rejectors": tree_rejectors,
+        "selected_tree_rejectors": selected_tree_rejectors
     }
     
     info = {
@@ -277,9 +298,11 @@ def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats
     """Calibrate all distance-based rejectors"""
     focus_metrics = info["focus_metrics"]
     rejectors["selected_l2_rejectors_distances"] = {}
+    rejectors["selected_tree_rejectors"] = {}
     
     for k in tqdm(models.keys(), desc="Calibrating distance-based rejectors"):
         rejectors["selected_l2_rejectors_distances"][k] = {}
+        rejectors["selected_tree_rejectors"][k] = {}
         
         for metric in focus_metrics:
             for m_type in ["min", "max", "mean"]:
@@ -304,6 +327,32 @@ def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats
                     use_gamma=True
                 )
                 rejectors["selected_l2_rejectors_distances"][k][selective_c_gamma] = l2_rejector_dist_gamma.qband(
+                    splits["X_test"],
+                    all_stats_test[k]["distances"][metric][m_type]
+                    )
+                
+                # Tree rejector
+                selective_c_tree = f"CFTreeRejector_{metric}_{m_type}"
+                tree_rejector = rejectors["tree_rejectors"][k][selective_c_tree]
+                tree_rejector.calibrate(
+                    splits["X_calibration"],
+                    splits["y_calibration"],
+                    target_distances=all_stats[k]["distances"][metric][m_type]
+                )
+                rejectors["selected_tree_rejectors"][k][selective_c_tree] = tree_rejector.qband(
+                    splits["X_test"],
+                    all_stats_test[k]["distances"][metric][m_type]
+                    )
+                # Gamma tree rejector
+                selective_c_tree_gamma = f"CFTreeRejector_{metric}_{m_type}_gamma"
+                tree_rejector_gamma = rejectors["tree_rejectors"][k][selective_c_tree_gamma]
+                tree_rejector_gamma.calibrate(
+                    splits["X_calibration"],
+                    splits["y_calibration"],
+                    target_distances=all_stats[k]["distances"][metric][m_type],
+                    use_gamma=True
+                )
+                rejectors["selected_tree_rejectors"][k][selective_c_tree_gamma] = tree_rejector_gamma.qband(
                     splits["X_test"],
                     all_stats_test[k]["distances"][metric][m_type]
                     )
@@ -354,6 +403,18 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info):
                 n=n,
                 metric_dicts=metric_dicts
             )
+        # Evaluate tree-based rejectors
+        for selective_c, selected_data in rejectors["selected_tree_rejectors"][k].items():
+            compute_selective_metrics(
+                model_key=k,
+                selected_data=selected_data,
+                classifier_type=selective_c,
+                selective_classifier=rejectors["tree_rejectors"][k][selective_c],
+                splits=splits,
+                target_coverages=target_coverages,
+                n=n,
+                metric_dicts=metric_dicts
+            )
     
     return metric_dicts
 
@@ -393,6 +454,10 @@ def fancy_names(name):
             name = name.replace("_gamma", "")
         else:
             apex = ""
+        if name.split("_")[1] == "CFDistRejector":
+            tree = ""
+        elif name.split("_")[1] == "CFTreeRejector":
+            tree = " (Tree)"
         distr = name.split("_")[-1]
         if distr == "mean":
             distr = "_{mean}"
@@ -407,12 +472,17 @@ def fancy_names(name):
         else:
             method = method.upper()
         distance = name.split("_")[2]
-        newn= method+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
+        
+        newn= method+tree+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
+        print(name,newn)
         return newn
 
 subpartial_yet_easier_results = {}
-def visualize_results(models, dataframes, info, args, plot_dir,
-                      fig_name="selective_classifiers"):
+def visualize_results(models, dataframes, info, name_dataset, plot_dir,
+                      fig_name="selective_classifiers",
+                      show =False,
+                      top_k=2+6 # Number of top methods to select
+                      ):
     """Visualize results for each model"""
     target_coverages = info["target_coverages"]
     target_coverages_n = info["target_coverages_n"]
@@ -422,10 +492,7 @@ def visualize_results(models, dataframes, info, args, plot_dir,
     os.makedirs(plot_dir, exist_ok=True)
     # Scale limits
     minimum = np.array([all_original_scores[k] for k in all_original_scores.keys()]).min()
-    vmax =    0
-
-    top_k = 2+6  # Number of top methods to select
-    
+    vmax =    0    
     for k in models.keys():
 
         # Get indices of top performing methods by sum across coverages
@@ -498,8 +565,13 @@ def visualize_results(models, dataframes, info, args, plot_dir,
         #ax[0].set_title(f"Top Selective Classifiers for Model: {k}")
         ax[0].set_yticks(np.array([i for i in range(len(top_policies_names))]))
         ax[0].set_yticklabels(top_policies_names, rotation=0, fontsize=16)
+        try:
+            print(df.columns)
+        except Exception as e:
+            print(e)
+            print(df.head())
         ax[0].set_xticks(range(target_coverages_n//2))
-        ax[0].set_xticklabels([str(round(e, 2)) for e in df.columns], rotation=45)
+        ax[0].set_xticklabels([str(round(e, 2)) for e in df.columns], rotation=0)
         
         # Add colorbar
         plt.colorbar(im, ax=ax[0], label="Rejection Quality")
@@ -517,8 +589,10 @@ def visualize_results(models, dataframes, info, args, plot_dir,
                 marker = 'o'
             
             label = fancy_names(df.index[policy_idx])
-            ax[1].plot(df.values[policy_idx, :], label=label, marker=marker, ls=ls)
+            ax[1].plot(df.columns,df.values[policy_idx, :][::-1], label=label, marker=marker, ls=ls)
         
+        ax[1].set_xticks(df.columns)#range(target_coverages_n//2))
+        ax[1].set_xticklabels([str(round(e, 2)) for e in df.columns[::-1]], rotation=0)
         # Add line for original score
         ax[1].axhline(
             all_original_scores[k],
@@ -529,18 +603,9 @@ def visualize_results(models, dataframes, info, args, plot_dir,
         
         ax[1].set_xlabel("Target Coverage")
         ax[1].set_ylabel("Rejection Accuracy")
-        ax[1].set_xticks(range(target_coverages_n//2))
-        ax[1].set_xticklabels([str(round(e, 2)) for e in df.columns], rotation=45)
         ax[1].legend()
         ax[1].grid(True)
         ax[1].set_ylim(minimum, vmax)
-        
-        # Get dataset name for title
-        name_dataset = {
-            "german_credit": "German Credit",
-            "adult48k": "Adult",
-            "toy_dataset": "Toy Dataset"
-        }[args.dataset]
         
         plt.suptitle(
             f"{name_dataset} - Model: {k}",
@@ -553,103 +618,17 @@ def visualize_results(models, dataframes, info, args, plot_dir,
             fig_name+"_"+k+".pdf"
         )
         plt.tight_layout()
-        plt.savefig(fig_path)
-        print(f"Saved figure to {fig_path}")
-        
-        # Also save PNG for easy viewing
-        plt.savefig(fig_path.replace(".pdf", ".png"))
-        plt.close(fig)
-        # I should store this partial result in a dictionary
-        copy_df = dataframes[k].copy()
-        # add the cf_method as prefix of the selective classifier name
-        copy_df.columns = [f"{args.method}_{col}" for col in copy_df.columns]
-        subpartial_yet_easier_results[k] = {
-            "df": copy_df
-        }
-
-
-def save_results(results, args, save_dir):
-    """Save results to disk"""
-    results_path = os.path.join(
-        save_dir,
-        f"selective_results_{args.dataset}_{args.method}{'_latent' if args.latent else ''}.pkl"
-    )
-    
-    with open(results_path, "wb") as f:
-        pickle.dump(results, f)
-    
-    print(f"Saved results to {results_path}")
-
+        if show:
+            plt.show()
+        else:
+            plt.savefig(fig_path)
+            print(f"Saved figure to {fig_path}")
+            
+            # Also save PNG for easy viewing
+            plt.savefig(fig_path.replace(".pdf", ".png"))
+            plt.close(fig)
 
 def main():
-    """Main function - orchestrates the overall workflow"""
-    # Parse command line arguments
-    args = parse_arguments()
-    
-    # Create directories for output
-    plot_dir = create_directories(args.dataset)
-    plot_dir = os.path.join(plot_dir, args.method + ("_latent" if args.latent else ""))
-    os.makedirs(plot_dir, exist_ok=True)
-    
-    # Load configuration
-    config = load_config('config.yaml')
-    
-    # Load data
-    splits = load_data(config, args.dataset)
-    
-    # Load or train models
-    models = load_or_train_models(config, splits, args.dataset)
-    
-    # Load distance statistics
-    all_stats, all_stats_test = load_distance_stats(args.method, args.dataset, args.latent)
-    
-    
-    # Check if distances are computed
-    for k in models.keys():
-        print(k, "computed?", check_res(stats_dict=all_stats, k=k))
-        print("\t", "test?", check_res(stats_dict=all_stats_test, k=k))
-    
-    # Convert lists to arrays
-    all_stats = convert_lists_to_arrays(models, all_stats)
-    all_stats_test = convert_lists_to_arrays(models, all_stats)
-    # Initialize selective classifiers
-    rejectors, metric_dicts, info = initialize_rejectors(models, splits)
-    
-    # Calibrate basic rejectors
-    rejectors = calibrate_basic_rejectors(models, rejectors, splits, all_stats, all_stats_test, info)
-    
-    
-    rejectors = calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats_test, info)
-    
-    # Evaluate all rejectors
-    metric_dicts = evaluate_rejectors(models, rejectors, splits, metric_dicts, info)
-    
-    # Create dataframes for visualization
-    dataframes = create_dataframes(models, metric_dicts, info)
-    fig_name = f"selective_{args.dataset}_{args.method}_{'latent_' if args.latent else ''}"
-    # Visualize results
-    visualize_results(models, dataframes, info, args, plot_dir,fig_name=fig_name)
-    
-    # Package results
-    results = {
-        "all_original_scores": info["all_original_scores"],
-        "metric_dicts": metric_dicts,
-        "dataframes": dataframes
-    }
-    
-    # Save results
-    save_results(results, args, plot_dir)
-
-    # in another script, we can load the results and make the CD diagrams
-    # as well as the statistical tests
-
-    print("Measuring completed successfully!")
-    # save the subpartial_yet_easier_results
-    with open(f"results/subpartial_yet_easier_results_{args.dataset}_{args.method}{'_latent' if args.latent else ''}.pkl", "wb") as f:
-        pickle.dump(subpartial_yet_easier_results, f)
-
-
-def main_all():
     """Main function - orchestrates the overall workflow"""
     # Parse command line arguments
     args = parse_arguments()
@@ -670,7 +649,7 @@ def main_all():
     
     all_dataframes = {}
     # Load distance statistics for the cf_methods 
-    for cf_method in ["ils","ils_latent","lore"]:
+    for cf_method in ["ils","ils_latent","lore"]:#,"dice"]:
         if cf_method == "ils_latent":
             args.latent = True
             cf_method = "ils"
@@ -684,7 +663,7 @@ def main_all():
         
         # Convert lists to arrays
         all_stats = convert_lists_to_arrays(models, all_stats)
-        all_stats_test = convert_lists_to_arrays(models, all_stats)
+        all_stats_test = convert_lists_to_arrays(models, all_stats_test)
         # retain only the L2 and the cosine distance
         #all_stats = {k: {"distances": {m: all_stats[k]["distances"][m] for m in ["l2", "cosine"]}} for k in all_stats.keys()}
         #all_stats_test = {k: {"distances": {m: all_stats_test[k]["distances"][m] for m in ["l2", "cosine"]}} for k in all_stats_test.keys()}
@@ -722,7 +701,8 @@ def main_all():
     print("Visualizing results")
     # now is different, because we have all the cf_methods, so we need to iterate over the dataset only
     fig_name = f"selective_classifier_{args.dataset}_results"
-    visualize_results(models, all_dataframes, info, args, plot_dir,fig_name=fig_name)
+    dataset_name = fancy_dataset_names[args.dataset]
+    visualize_results(models, all_dataframes, info, dataset_name, plot_dir,fig_name=fig_name)
 
 if __name__ == "__main__":
-    main_all()
+    main()

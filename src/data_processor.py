@@ -9,6 +9,14 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 import numpy as np
 import category_encoders as ce
 from src.toy_dataset import generate_toy
+
+# Get dataset name for title
+fancy_dataset_names = {
+            "german_credit": "German Credit",
+            "adult48k": "Adult",
+            "toy_dataset": "Two Moons"
+        }
+
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""
 
