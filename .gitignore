@@ -24,6 +24,8 @@ data/raw/*
 *random_forest.pkl
 *xgboost.pkl
 
+# the plots generated
+results/*
 
 
 
@@ -55,3 +57,4 @@ Update the imports.txt
 counterfactuals/cf_generators/dice/time_to_generate_dice.txt
 counterfactuals/cf_generators/dice/time_to_generate.txt
 toy_dataset.pdf
+
