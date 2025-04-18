@@ -40,9 +40,20 @@ class DataProcessor:
             return self._load_adult48k()
         if dataset_name == "breast_cancer":
             return self._load_breast_cancer()
+        if dataset_name == "eye":
+            return self._load_eye()
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
-        
+    def _load_eye(self) -> pd.DataFrame:
+        """Load eye dataset."""
+        path = self.config['data']['eye']['path']
+        try:
+            df = pd.read_csv(path)
+            print(f"Loaded eye dataset with shape {df.shape}")
+            return df
+        except Exception as e:
+            print(f"Error loading eye dataset: {str(e)}")
+            raise
     def _load_breast_cancer(self) -> pd.DataFrame:
         """Load breast cancer dataset."""
         path = self.config['data']['breast_cancer']['path']
@@ -107,9 +118,32 @@ class DataProcessor:
             return self._preprocess_adult48k(data)
         elif dataset_name == "breast_cancer":
             return self._preprocess_breast_cancer(data, fit)
+        elif dataset_name == "eye":
+            return self._preprocess_eye(data, fit)
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
         return data
+    def _preprocess_eye(self,
+                        data: pd.DataFrame,
+                        fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
+        """Preprocess Eye dataset."""
+        
+        # Extract target
+        data["Relevant"] = data["label"]
+        # Copy data to avoid modifying original
+        features = data.copy()
+        # drop #line and #assg
+        features = features.drop(columns=['#line', '#assg'], axis=1)
+        # Extract target
+        target = features["Relevant"]
+        del features["Relevant"]
+        if fit:
+            # scale the data in the range [0,1]
+            features = (features - features.min(axis=0)) / (features.max(axis=0) - features.min(axis=0))
+        else:
+            features = features
+        return features, target
+        
     def _preprocess_german_credit(self,
                                 data: pd.DataFrame,
                                 fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
@@ -153,15 +187,15 @@ class DataProcessor:
         """Preprocess Breast Cancer dataset."""
         # drop the first column (its the index)
         # Extract target
-        data["target"] = data["diagnosis"].map({'M': 1, 'B': 0})
+        data["Diagnosis"] = data["diagnosis"].map({'M': 1, 'B': 0})
         del data["diagnosis"]
         # remove the Unnamed: 32 column
         data = data.drop("Unnamed: 32", axis=1)
         # remove the id column
         data = data.drop("id", axis=1)        
-        y = data["target"]
-        del data["target"]
-        self.target_name = "diagnosis"
+        y = data["Diagnosis"]
+        del data["Diagnosis"]
+        self.target_name = "Diagnosis"
         self.feature_names = data.columns.tolist()
         # scale the data in the range [0,1]
         if fit:

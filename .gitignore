@@ -19,10 +19,10 @@ data/raw/*
 *.npz
 
 # For counterfactual generators
-*lgbm.pkl
-*mlp.pkl
-*random_forest.pkl
-*xgboost.pkl
+# *lgbm.pkl
+# *mlp.pkl
+# *random_forest.pkl
+# *xgboost.pkl
 
 # the plots generated
 results/*

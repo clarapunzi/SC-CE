@@ -127,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str,
                         help="The name of the dataset to use",default="adult48k")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="dice")
+                        help="The counterfactual generation method to use",default="lore")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()
@@ -145,8 +145,12 @@ if __name__ == "__main__":
                        args=(args.dataset, args.cf_method, args.config_path, [model_type]))
             p.start()
             processes.append(p)
-
-        # Wait for all processes to complete
+            if len(processes)>=2:
+                # Wait for the first process to finish
+                processes[0].join()
+                processes.pop(0)
+                print("joined a process")
+        # Wait for any remaining processes to finish
         for p in processes:
             p.join()
 
