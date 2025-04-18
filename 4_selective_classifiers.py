@@ -620,6 +620,7 @@ def visualize_results(models, dataframes, info, name_dataset, plot_dir,
         plt.tight_layout()
         if show:
             plt.show()
+            plt.clf()
         else:
             plt.savefig(fig_path)
             print(f"Saved figure to {fig_path}")
