@@ -38,8 +38,23 @@ class DataProcessor:
             return self._load_toy_dataset()
         if dataset_name == "adult48k":
             return self._load_adult48k()
+        if dataset_name == "breast_cancer":
+            return self._load_breast_cancer()
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
+        
+    def _load_breast_cancer(self) -> pd.DataFrame:
+        """Load breast cancer dataset."""
+        path = self.config['data']['breast_cancer']['path']
+        try:
+            df = pd.read_csv(path)
+            print(f"Loaded breast cancer dataset with shape {df.shape}")
+            return df
+        except Exception as e:
+            print(f"Error loading breast cancer dataset: {str(e)}")
+            raise
+    
+
     def _load_adult48k(self) -> pd.DataFrame:
         """Load adult48k dataset."""
         path = self.config['data']['adult48k']['path']
@@ -90,6 +105,8 @@ class DataProcessor:
             return self._preprocess_toy(data, fit)
         elif dataset_name == "adult48k":
             return self._preprocess_adult48k(data)
+        elif dataset_name == "breast_cancer":
+            return self._preprocess_breast_cancer(data, fit)
         else:
             raise ValueError(f"Unknown dataset: {dataset_name}")
         return data
@@ -130,7 +147,28 @@ class DataProcessor:
                     features[col] = self.encoders[col].transform(features[col])
 
         return features, target
-
+    def _preprocess_breast_cancer(self,
+                                  data: pd.DataFrame,
+                                  fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
+        """Preprocess Breast Cancer dataset."""
+        # drop the first column (its the index)
+        # Extract target
+        data["target"] = data["diagnosis"].map({'M': 1, 'B': 0})
+        del data["diagnosis"]
+        # remove the Unnamed: 32 column
+        data = data.drop("Unnamed: 32", axis=1)
+        # remove the id column
+        data = data.drop("id", axis=1)        
+        y = data["target"]
+        del data["target"]
+        self.target_name = "diagnosis"
+        self.feature_names = data.columns.tolist()
+        # scale the data in the range [0,1]
+        if fit:
+            data = (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0))
+        else:
+            data = data
+        return data, y
     def _preprocess_folktables(self,
                              data: pd.DataFrame,
                              fit: bool) -> Tuple[pd.DataFrame, pd.Series]:
