@@ -1,12 +1,12 @@
 data:
   german_credit:
     path: "data/raw/german_credit.csv"
-  folktables:
-    path: "data/raw/folktables/"
   toy_data:
     path: "."
   adult48k:
     path: "data/raw/adult48k.csv"
+  breast_cancer:
+    path: "data/raw/breast_cancer.csv"
 
 wandb:
   project_name: "counterfactuals-debug"

@@ -20,7 +20,6 @@ To wrap the classifiers and compute the metrics for the selective classifiers
 
 
 TODO datasets:
-- [ ] Add the winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [ ] add income dataset
 TODO:
 - [ ] Separate the computation of the counterfactuals in chunks
@@ -37,6 +36,7 @@ DONE:
 - [x] add the ILS cf generator
 - [x] save the counterfactuals as well as the rule and the tree for each sample
 dataset:
+- [x] Add the winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [x] add toydataset
 - [x] add german credit
 - [x] create class SelectiveClassifier for CFDistRejector, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
