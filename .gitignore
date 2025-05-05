@@ -58,3 +58,4 @@ counterfactuals/cf_generators/dice/time_to_generate_dice.txt
 counterfactuals/cf_generators/dice/time_to_generate.txt
 toy_dataset.pdf
 
+oldresults_deleateable/*
