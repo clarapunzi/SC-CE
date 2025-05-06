@@ -19,6 +19,8 @@ To wrap the classifiers and compute the metrics for the selective classifiers
 - 4_selective_classifiers.ipynb
 
 
+The scripts version of 4_selective_classifiers.ipynb do the same thing as the notebook, but takes into consideration all the different counterfactuals generators methods.
+<!--
 TODO datasets:
 - [ ] add income dataset
 TODO:
@@ -28,9 +30,9 @@ TODO:
 
 TODO refactorings:
 - [ ] remove the debug* notebook files from main folder
-- [ ] add the metrics as tables! (still need to have python function to produce the latex table)
 - [ ] add ALL the remaining metrics (2)
 
+-->
 DONE:
 - [x] add the lore genetic 
 - [x] add the ILS cf generator
@@ -47,6 +49,7 @@ refactorings:
 - [x] add the metric to the evaluation notebook (non rejected accuracy)
 - [x] refactored the plot and the computation of the metrics
 - [x] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
+- [x] add the metrics as tables! (still need to have python function to produce the latex table)
 
 
 # IDEA
@@ -57,7 +60,7 @@ Than train a decision tree to learn the rules that optimize the performance of t
 
 Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality and rejection_classification_report. 
 
-
+<!--
 ### remeber that for adding the submodules you have to 
 git submodule add link/to/submodule
 ### and after
@@ -67,3 +70,4 @@ git submodule update
 
 ### to remove the submodule
 git submodule deinit submodule_path
+-->

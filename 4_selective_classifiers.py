@@ -294,15 +294,17 @@ def calibrate_basic_rejectors(models, rejectors, splits, all_stats, all_stats_te
     return rejectors
 
 
-def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats_test, info):
+def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats_test, info,calibrate_trees=False):
     """Calibrate all distance-based rejectors"""
     focus_metrics = info["focus_metrics"]
     rejectors["selected_l2_rejectors_distances"] = {}
-    rejectors["selected_tree_rejectors"] = {}
+    if calibrate_trees:
+        rejectors["selected_tree_rejectors"] = {}
     
     for k in tqdm(models.keys(), desc="Calibrating distance-based rejectors"):
         rejectors["selected_l2_rejectors_distances"][k] = {}
-        rejectors["selected_tree_rejectors"][k] = {}
+        if calibrate_trees:
+            rejectors["selected_tree_rejectors"][k] = {}
         
         for metric in focus_metrics:
             for m_type in ["min", "max", "mean"]:
@@ -331,37 +333,38 @@ def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats
                     all_stats_test[k]["distances"][metric][m_type]
                     )
                 
-                # Tree rejector
-                selective_c_tree = f"CFTreeRejector_{metric}_{m_type}"
-                tree_rejector = rejectors["tree_rejectors"][k][selective_c_tree]
-                tree_rejector.calibrate(
-                    splits["X_calibration"],
-                    splits["y_calibration"],
-                    target_distances=all_stats[k]["distances"][metric][m_type]
-                )
-                rejectors["selected_tree_rejectors"][k][selective_c_tree] = tree_rejector.qband(
-                    splits["X_test"],
-                    all_stats_test[k]["distances"][metric][m_type]
+                if calibrate_trees:
+                    # Tree rejector
+                    selective_c_tree = f"CFTreeRejector_{metric}_{m_type}"
+                    tree_rejector = rejectors["tree_rejectors"][k][selective_c_tree]
+                    tree_rejector.calibrate(
+                        splits["X_calibration"],
+                        splits["y_calibration"],
+                        target_distances=all_stats[k]["distances"][metric][m_type]
                     )
-                # Gamma tree rejector
-                selective_c_tree_gamma = f"CFTreeRejector_{metric}_{m_type}_gamma"
-                tree_rejector_gamma = rejectors["tree_rejectors"][k][selective_c_tree_gamma]
-                tree_rejector_gamma.calibrate(
-                    splits["X_calibration"],
-                    splits["y_calibration"],
-                    target_distances=all_stats[k]["distances"][metric][m_type],
-                    use_gamma=True
-                )
-                rejectors["selected_tree_rejectors"][k][selective_c_tree_gamma] = tree_rejector_gamma.qband(
-                    splits["X_test"],
-                    all_stats_test[k]["distances"][metric][m_type]
+                    rejectors["selected_tree_rejectors"][k][selective_c_tree] = tree_rejector.qband(
+                        splits["X_test"],
+                        all_stats_test[k]["distances"][metric][m_type]
+                        )
+                    # Gamma tree rejector
+                    selective_c_tree_gamma = f"CFTreeRejector_{metric}_{m_type}_gamma"
+                    tree_rejector_gamma = rejectors["tree_rejectors"][k][selective_c_tree_gamma]
+                    tree_rejector_gamma.calibrate(
+                        splits["X_calibration"],
+                        splits["y_calibration"],
+                        target_distances=all_stats[k]["distances"][metric][m_type],
+                        use_gamma=True
                     )
+                    rejectors["selected_tree_rejectors"][k][selective_c_tree_gamma] = tree_rejector_gamma.qband(
+                        splits["X_test"],
+                        all_stats_test[k]["distances"][metric][m_type]
+                        )
                 
     
     return rejectors
 
 
-def evaluate_rejectors(models, rejectors, splits, metric_dicts, info):
+def evaluate_rejectors(models, rejectors, splits, metric_dicts, info, calibrate_trees=False):
     """Evaluate all rejector types"""
     target_coverages = info["target_coverages"]
     n = info["n"]
@@ -403,18 +406,19 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info):
                 n=n,
                 metric_dicts=metric_dicts
             )
-        # Evaluate tree-based rejectors
-        for selective_c, selected_data in rejectors["selected_tree_rejectors"][k].items():
-            compute_selective_metrics(
-                model_key=k,
-                selected_data=selected_data,
-                classifier_type=selective_c,
-                selective_classifier=rejectors["tree_rejectors"][k][selective_c],
-                splits=splits,
-                target_coverages=target_coverages,
-                n=n,
-                metric_dicts=metric_dicts
-            )
+        if calibrate_trees:
+            # Evaluate tree-based rejectors
+            for selective_c, selected_data in rejectors["selected_tree_rejectors"][k].items():
+                compute_selective_metrics(
+                    model_key=k,
+                    selected_data=selected_data,
+                    classifier_type=selective_c,
+                    selective_classifier=rejectors["tree_rejectors"][k][selective_c],
+                    splits=splits,
+                    target_coverages=target_coverages,
+                    n=n,
+                    metric_dicts=metric_dicts
+                )
     
     return metric_dicts
 
@@ -504,15 +508,15 @@ def generate_latex_table(ldf,
                 yticklabels=[fancy_names(fnam) for fnam in ldf.loc[sorted_rows,:].index],
                 vmax=vmax,
                 vmin=minimum)
-    plt.title(f"Top Selective Classifiers for {dataset_name} ({black_box_name})")
-    plt.xlabel("Target Coverage")
-    # save the figure
-    figname = dataset_name.replace(" ","_") + "_" + black_box_name + "_top_selective_classifiers_TABLE.pdf"
-    fpath = os.path.join("results", figname)
-    plt.savefig(fpath, bbox_inches='tight')
-    print("Figure saved as", fpath)
-    if show:
-        plt.show() 
+    # plt.title(f"Top Selective Classifiers for {dataset_name} ({black_box_name})")
+    # plt.xlabel("Target Coverage")
+    # # save the figure
+    # figname = dataset_name.replace(" ","_") + "_" + black_box_name + "_top_selective_classifiers_TABLE.pdf"
+    # fpath = os.path.join("results", figname)
+    # plt.savefig(fpath, bbox_inches='tight')
+    # print("Figure saved as", fpath)
+    # if show:
+    #     plt.show() 
     best_vals_by_col = ldf.values[top_policies, :].max(axis=0)
     #print(ldf)
     #print("best_vals_by_col", best_vals_by_col)
@@ -527,7 +531,8 @@ def generate_latex_table(ldf,
         table += "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n"
         table += "\\begin{table*}[t]\n\\centering\n\\resizebox{1\linewidth}{!}{\n\\begin{tabular}{c|c|l|" + "c|" * len(ldf.columns) + "}\n"
         # the header have the dataset name, the cf method, and the target coverages
-        table += "\\hline\n\\textbf{Dataset} & \\textbf{Black Box} & \\textbf{Rejection Policy} & " + " & ".join([f"{round(c, 2)}" for c in  ldf.columns]) + " \\\\\n\\hline\n"
+        # table += "\\hline\n\\textbf{Dataset} & \\textbf{Black Box} & \\textbf{Rejection Policy} & " + " & ".join([f"{round(c, 2)}" for c in  ldf.columns]) + " \\\\\n\\hline\n"
+        table += "\\multirow{2}{*}{\\textbf{Dataset}} & \multirow{2}{*}{\\textbf{Black Box}} & \multirow{2}{*}{\\textbf{Rejection Policy}} & \multicolumn{9}{c|}{Target Coverages}\\\\\n\cline{4-"+str(3+ len(ldf.columns))+"}\n"
         # the name of the dataset is written vertically and taks as many lines as the number of the top policies
         table += "\\multirow{" + str(len(top_policies)*num_models) + "}{*}{\\rotatebox[origin=c]{90}{\\textbf{" + name_dataset_command[dataset_name] + "}}}"
     else: # the header is already been printed so we just add a \cline
@@ -573,9 +578,82 @@ def plot_heatmap(ax, df, top_policies, top_policies_names, target_coverages_n, m
     ax.set_xticklabels([str(round(e, 2)) for e in df.columns], rotation=0)
     plt.colorbar(im, ax=ax, label="Rejection Quality")
 
-def plot_line_graph(ax, df, top_policies, top_policies_names, 
+def simplified_plot_styling(method_name):
+    """Simplified styling based on method name parsing."""
+    metrics_colors = {
+        # Blue
+        'inf': '#1f77b4',         
+        # Orange
+        'cosine': '#ff7f0e',      
+        # Green
+        'braycurtis': '#2ca02c',  
+        # Red
+        'chebyshev': '#d62728',   
+        # Purple
+        'l2': '#9467bd',          
+        # Brown
+        'minkowski': '#8c564b',   
+        # Pink
+        'wasserstein': '#e377c2', 
+        # dark blue
+        'l1': '#5f7e0b',
+        # Yellow-green
+        'mae': '#bcbd22',         
+        # Cyan
+        'sqeuclidean': '#17becf'  
+    }
+    style = {}
+    method_name = method_name.lower()
+    # Set defaults
+    style['ls'] = '-'
+    style['marker'] = 'o'
+    style['color'] = 'blue'
+    style['linewidth'] = 1.5
+    style['markersize'] = 8
+    
+    # Check for baseline methods
+    if 'plugin' in method_name:
+        style['ls'] = '--'
+        style['color'] = 'black'
+        if 'auc' in method_name:
+            style['marker'] = '$A$'
+            style['markersize'] = 10
+        return style
+    # Check for gamma distribution
+    if 'gamma' in method_name:
+        # use  the symbol \gamma itself
+        style['marker'] = '$\gamma$'
+    else:
+        style['markersize'] = 4
+
+    
+    # Check for counterfactual method
+    if 'lore' in method_name:
+        style['color'] = '#1f77b4'  # Blue
+    elif 'latent' in method_name:
+        style['color'] = '#ff7f0e'  # Orange
+    elif 'dice' in method_name:
+        style['color'] = '#2ca02c'  # Green
+    elif 'ils' in method_name:
+        style['color'] = '#d62728'  # Red
+    if 'min' in method_name:
+        style['linewidth']= 2.5
+        style["ls"] = ':'
+    if 'max' in method_name:
+        style['linewidth']= 2
+
+    # Check for metrics in the method name
+    for metric, color in metrics_colors.items():
+        if metric in method_name.lower():
+            style['color'] = color
+            break
+    
+    return style
+
+def plot_line_graph_nb(ax, df, top_policies, top_policies_names, 
                     target_coverages, all_original_scores, 
-                    model_name, minimum, vmax):
+                    model_name, minimumm, vmaxx,
+                    indx=0):
     """Plot line graph of top methods."""
     for j, policy_idx in enumerate(top_policies):
         if policy_idx == 0:  # PlugInRule
@@ -589,20 +667,74 @@ def plot_line_graph(ax, df, top_policies, top_policies_names,
             marker = 'o'
 
         label = top_policies_names[j]
-        ax.plot(df.columns, df.values[policy_idx, :], label=label, marker=marker, ls=ls)
+        style = simplified_plot_styling(label)
+        ax.plot(df.columns, df.values[policy_idx, :], 
+                label=label, 
+                ls=style['ls'],
+                marker=style['marker'],
+                color=style['color'],
+                linewidth=style['linewidth'],
+                markersize=style['markersize'],
+                )
 
     ax.axhline(all_original_scores[model_name], label=f"Original {model_name}", color='k', ls='--')
+    # only the target coverages that are multiples of 0.05 plus the 0.99
+    target_coverages = target_coverages.copy()
+    target_coverages = np.array(target_coverages)[((np.array(target_coverages)*100)%5==0)]
+    target_coverages = np.concatenate([[0.99], target_coverages])
+    
     ax.set_xticks(target_coverages)
-    ax.set_xticklabels([str(round(e, 2)) for e in target_coverages], rotation=0)
+    ax.set_xticklabels([f"{e*100:.0f}%" for e in target_coverages], rotation=0,
+                       fontsize=18)
     xlims = ax.get_xlim()
     ax.set_xlim(xlims[1], xlims[0])
-    ax.set_xlabel("Target Coverage")
-    ax.set_ylabel("Rejection Accuracy")
-    ax.legend()
-    ax.grid(True)
-    ax.set_ylim(minimum, vmax)
+    ax.set_xlabel("Target Coverage"   , fontsize=20)
+    # ax.legend()
+    ax.grid(True,alpha=0.3)
+    print(minimumm, vmaxx)
+    ax.set_ylim(minimumm, vmaxx)
+    if indx == 0:
+        ax.set_ylabel("Non-rejected Accuracy", fontsize=20)
+    if indx == 3:
+        # place the yticklabels on the right
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+        #ax.set_yticks(ax.get_yticks()[::2])
+        
+        ax.set_yticklabels([f"{e*100:.1f}%" for e in ax.get_yticks()], fontsize=18)
+    else:
+        ax.set_yticklabels([])
+        ax.set_yticks([])
 
 
+def create_legend_file(top_policies_names, model_name,dt_name):
+    """Create a standalone legend file with metrics-based coloring."""
+    fig, ax = plt.subplots(figsize=(12, 3))
+    ax.set_axis_off()  # Hide the axes
+    print(top_policies_names)
+    
+    top_policies_names = list(set(top_policies_names))
+    metric_methods = top_policies_names
+    # place pluginrule and pluginruleauc at the beginning
+    metric_methods = ["PlugInRule", "PlugInRuleAUC"] + [e for e in metric_methods if e not in ["PlugInRule", "PlugInRuleAUC"]] 
+    for name in metric_methods:
+        style = simplified_plot_styling(name)
+        label = name
+        ax.plot([], [], 
+                    label=label,
+                    marker=style['marker'],  # Standard marker
+                    ls=style['ls'],
+                    color=style['color'],
+                    linewidth=style['linewidth'],
+                    markersize=style['markersize'])
+    ax.plot([], [], label=f"Original {model_name}", color='k', ls='--')
+    
+    # Create the legend with multiple columns
+    legend = ax.legend(loc='center', ncol=3, frameon=False, fontsize=18, 
+                      handlelength=2, handletextpad=0.5)
+    # Save just the legend
+    fig.savefig(f"results/legend_metrics_{dt_name}.pdf", bbox_inches='tight')
+    #plt.close(fig)
 
 def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       fig_name="alternative_selective_classifiers",
@@ -633,6 +765,9 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
     latex_tables = {k:"" for k in models.keys()}
     big_tables =   {k:"" for k in models.keys()}
     # use the fancy bar from tqdm
+    fig, ax = plt.subplots(1, 4, figsize=(7*4, 7))
+    ax = ax.flatten()
+    plotted_methods = []
     for indx,k in enumerate(tqdm(models.keys(), desc="Visualizing results")):
         # Select top performing methods
         df = dataframes[k].copy().iloc[:, :target_coverages_n//2]
@@ -668,7 +803,7 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         # the correct way to do it is to use the following line
         df["flag"] = 0
         for i in range(len(df)):
-            if (df.iloc[i, :] < all_original_scores[k]).any():
+            if (df.iloc[i, :-1] < all_original_scores[k]).any():
                 df["flag"].iloc[i] = -20
                 print("flag",df.iloc[i, :].index,"has a value lower than the original model")
                 print(df.iloc[i, :]< all_original_scores[k])
@@ -688,7 +823,7 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         # now place the PlugInRule and PlugInRuleAUC at the beginning
         top_policies = [0, 1] + [e for e in top_policies if e not in [0, 1]]
         top_policies_names = [fancy_names(fnam) for fnam in df.index[top_policies]]       
-
+        plotted_methods += [fancy_names(fnam) for fnam in df.index[top_policies] if fnam not in plotted_methods]
         column_values = np.concatenate([[0.99],
                                         np.array(target_coverages[:target_coverages_n//2])[((
                                             np.array(target_coverages[:target_coverages_n//2])*100)%5==0)]
@@ -696,39 +831,26 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         custom_cmap = 'inferno'
         custom_cmap = 'Greys_r'
         custom_cmap = fplt.parula
-        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        # fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         # Plot line graph of top methods
-        plot_line_graph(ax=ax,
+        plot_line_graph_nb(ax=ax[indx],
                 df=df,
                 top_policies=top_policies,
                 top_policies_names=top_policies_names,
                 target_coverages=column_values,
                 all_original_scores=all_original_scores,
                 model_name=k,
-                minimum=minimum,
-                vmax=vmax)
+                minimumm=minimum,
+                vmaxx=vmax,
+                indx=indx)
     
         # Set title (not sure if it is needed)
-        plt.suptitle(
-            f"{name_dataset} - Model: {k}",
-              # {args.method.upper()} {'Latent' if args.latent else ''} - 
-            fontsize=16
-        )
+        # plt.suptitle(
+        #     f"{name_dataset} - Model: {k}",
+        #       # {args.method.upper()} {'Latent' if args.latent else ''} - 
+        #     fontsize=16
+        # )
         # Save figure
-        fig_path = os.path.join(
-            plot_dir,
-            fig_name+"_"+k+".pdf"
-        )
-        plt.tight_layout()
-        if show:
-            plt.show()
-            plt.clf()
-        else:
-            plt.savefig(fig_path)
-            print(f"Saved figure to {fig_path}")  
-            # Also save PNG for easy viewing
-            plt.savefig(fig_path.replace(".pdf", ".png"))
-            plt.close(fig)
         # Create LaTeX table
         big_tables[k] = generate_latex_table(ldf=df,
                                            black_box_score=all_original_scores[k],
@@ -758,6 +880,23 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                                  vmax=vmax,
                                  minimum=minimum
                                  )
+    fig_path = os.path.join(
+        plot_dir,
+        fig_name+"_"+k+".pdf"
+    )
+    plt.tight_layout()
+    if show:
+        plt.show()
+        plt.clf()
+    else:
+        plt.savefig(fig_path)
+        print(f"Saved figure to {fig_path}")  
+        # Also save PNG for easy viewing
+        plt.savefig(fig_path.replace(".pdf", ".png"))
+        plt.close(fig)
+    # the legend
+    create_legend_file(plotted_methods, "Black Box", name_dataset.replace(" ","_"))
+
     # make sure the tables directory exists
     table_name = "latex_table_" + name_dataset.replace(" ","_")+".tex"
     path = os.path.join("results","tables")

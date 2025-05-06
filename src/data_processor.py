@@ -16,7 +16,10 @@ fancy_dataset_names = {
             "adult48k": "Adult",
             "toy_dataset": "Two Moons"
         }
-
+name_dataset_command = {"German Credit": "\german",
+                        "Adult": "\\adult",
+                        "Two Moons":"\\twomoons",
+                        }
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""
 

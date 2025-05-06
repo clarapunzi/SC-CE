@@ -86,8 +86,8 @@ class CFTreeRejector(ClassifierMixin, BaseEstimator):
         sample_weights = weights * (1+y_hat.reshape(-1))
         # now sample weights are ∝ distance*(1+error)
         self.tree.fit(my_features, y_hat,sample_weight=sample_weights.reshape(-1))
-        print("Calibration done")
-        print("Tree has score", self.tree.score(my_features, y_hat)) # hopefully 1.0
+        # print("Calibration done")
+        # print("Tree has score", self.tree.score(my_features, y_hat)) # hopefully 1.0
         
 
         
