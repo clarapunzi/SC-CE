@@ -502,12 +502,12 @@ def generate_latex_table(ldf,
                          num_models = 4,
                          show = False,):
     """Generate a LaTeX table for the top selective classifiers."""
-    plt.figure(figsize=(8, 0.3*len(ldf)))
-    sns.heatmap(ldf.loc[sorted_rows,:].values, annot=True, fmt=".3f", cmap=cmap, cbar=True,
-                xticklabels=target_coverages,
-                yticklabels=[fancy_names(fnam) for fnam in ldf.loc[sorted_rows,:].index],
-                vmax=vmax,
-                vmin=minimum)
+    # plt.figure(figsize=(8, 0.3*len(ldf)))
+    # sns.heatmap(ldf.loc[sorted_rows,:].values, annot=True, fmt=".3f", cmap=cmap, cbar=True,
+    #             xticklabels=target_coverages,
+    #             yticklabels=[fancy_names(fnam) for fnam in ldf.loc[sorted_rows,:].index],
+    #             vmax=vmax,
+    #             vmin=minimum)
     # plt.title(f"Top Selective Classifiers for {dataset_name} ({black_box_name})")
     # plt.xlabel("Target Coverage")
     # # save the figure

@@ -20,6 +20,14 @@ To wrap the classifiers and compute the metrics for the selective classifiers
 
 
 The scripts version of 4_selective_classifiers.ipynb do the same thing as the notebook, but takes into consideration all the different counterfactuals generators methods.
+
+# IDEA
+Instead of only the prediction threshold XOR the distance threshold, we could use a combination of both. 
+Than train a decision tree to learn the rules that optimize the performance of the classifier looking at the confidence of the classifier and the distance of the counterfactuals (we can still use the min, max, mean, also different measures of the distance)
+
+### The main idea is to use the counterfactuals to learn the best threshold for the classifier
+
+Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality and rejection_classification_report. 
 <!--
 TODO datasets:
 - [ ] add income dataset
@@ -51,14 +59,6 @@ refactorings:
 - [x] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 - [x] add the metrics as tables! (still need to have python function to produce the latex table)
 
-
-# IDEA
-Instead of only the prediction threshold XOR the distance threshold, we could use a combination of both. 
-Than train a decision tree to learn the rules that optimize the performance of the classifier looking at the confidence of the classifier and the distance of the counterfactuals (we can still use the min, max, mean, also different measures of the distance)
-
-### The main idea is to use the counterfactuals to learn the best threshold for the classifier
-
-Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality and rejection_classification_report. 
 
 <!--
 ### remeber that for adding the submodules you have to 
