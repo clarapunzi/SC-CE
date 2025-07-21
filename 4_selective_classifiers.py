@@ -423,10 +423,10 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info, calibrate_
     return metric_dicts
 
 
-def create_dataframes(models, metric_dicts, info):
+def create_dataframes(models, metric_dicts, info,
+                      selective_metric="rejected_by_coverage"):
     """Create DataFrames for visualization"""
     target_coverages = info["target_coverages"]
-    selective_metric = "rejected_by_coverage"
     
     dataframes = {}
     for k in models.keys():
@@ -482,9 +482,6 @@ def fancy_names(name):
         return newn
 
 subpartial_yet_easier_results = {}
-
-
-
 
 def generate_latex_table(ldf,
                          black_box_score,
@@ -653,19 +650,10 @@ def simplified_plot_styling(method_name):
 def plot_line_graph_nb(ax, df, top_policies, top_policies_names, 
                     target_coverages, all_original_scores, 
                     model_name, minimumm, vmaxx,
+                    selective,# the name of the selective metric
                     indx=0):
     """Plot line graph of top methods."""
     for j, policy_idx in enumerate(top_policies):
-        if policy_idx == 0:  # PlugInRule
-            ls = '--'
-            marker = 'd'
-        elif policy_idx == 1:  # PlugInRuleAUC
-            ls = '--'
-            marker = 's'
-        else:
-            ls = '-'
-            marker = 'o'
-
         label = top_policies_names[j]
         style = simplified_plot_styling(label)
         ax.plot(df.columns, df.values[policy_idx, :], 
@@ -676,8 +664,9 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
                 linewidth=style['linewidth'],
                 markersize=style['markersize'],
                 )
+    if selective == "rejected_by_coverage":
 
-    ax.axhline(all_original_scores[model_name], label=f"Original {model_name}", color='k', ls='--')
+        ax.axhline(all_original_scores[model_name], label=f"Original {model_name}", color='k', ls='--')
     # only the target coverages that are multiples of 0.05 plus the 0.99
     target_coverages = target_coverages.copy()
     target_coverages = np.array(target_coverages)[((np.array(target_coverages)*100)%5==0)]
@@ -688,23 +677,32 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
                        fontsize=18)
     xlims = ax.get_xlim()
     ax.set_xlim(xlims[1], xlims[0])
-    ax.set_xlabel("Target Coverage"   , fontsize=20)
+    ax.set_xlabel("Target Coverage"   , fontsize=21)
     # ax.legend()
-    ax.grid(True,alpha=0.3)
-    print(minimumm, vmaxx)
-    ax.set_ylim(minimumm, vmaxx)
+    if minimumm is not None and vmaxx is not None:
+        print(minimumm, vmaxx)
+        ax.set_ylim(minimumm, vmaxx)
+    else:
+        ax.set_ylim(0, 1)
     if indx == 0:
-        ax.set_ylabel("Non-rejected Accuracy", fontsize=20)
+        if selective == "rejected_by_coverage":
+            ylab = "Non-rejected Accuracy"
+        elif selective == "rejection_quality_dict":
+            ylab = "Rejection Quality"
+        elif selective == "classification_quality_dict":
+            ylab = "Classification Quality"
+        ax.set_ylabel(ylab, fontsize=21)
     if indx == 3:
         # place the yticklabels on the right
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
         #ax.set_yticks(ax.get_yticks()[::2])
         
-        ax.set_yticklabels([f"{e*100:.1f}%" for e in ax.get_yticks()], fontsize=18)
+        ax.set_yticklabels([f"{e*100:.1f}%" for e in ax.get_yticks()], fontsize=20)
     else:
-        ax.set_yticklabels([])
-        ax.set_yticks([])
+        ax.set_yticklabels(["" for e in ax.get_yticks()], fontsize=20)
+        
+    ax.grid(True,alpha=0.6)
 
 
 def create_legend_file(top_policies_names, model_name,dt_name):
@@ -730,7 +728,7 @@ def create_legend_file(top_policies_names, model_name,dt_name):
     ax.plot([], [], label=f"Original {model_name}", color='k', ls='--')
     
     # Create the legend with multiple columns
-    legend = ax.legend(loc='center', ncol=3, frameon=False, fontsize=18, 
+    legend = ax.legend(loc='center', ncol=5, frameon=False, fontsize=18, 
                       handlelength=2, handletextpad=0.5)
     # Save just the legend
     fig.savefig(f"results/legend_metrics_{dt_name}.pdf", bbox_inches='tight')
@@ -739,26 +737,33 @@ def create_legend_file(top_policies_names, model_name,dt_name):
 def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       fig_name="alternative_selective_classifiers",
                       show =False,
-                      top_k=2+5 # Number of top methods to select
+                      top_k=2+5, # Number of top methods to select
+                      selective='rejection_quality_dict',
                       ):
+    
     target_coverages = info["target_coverages"]
     target_coverages_n = info["target_coverages_n"]
     all_original_scores = info["all_original_scores"]
 
-    minimum = np.array([all_original_scores[k] for k in all_original_scores.keys()]).min()
-    vmax =    0
-    for k in models.keys():
+    if selective == "rejected_by_coverage":
+        
+        minimum = np.array([all_original_scores[k] for k in all_original_scores.keys()]).min()
+        vmax =    0
+        for k in models.keys():
 
-        # Get indices of top performing methods by sum across coverages
+            # Get indices of top performing methods by sum across coverages
 
-        fake_auc = dataframes[k].copy().values[:,:target_coverages_n//2].sum(axis=1)
-        # sort the fake_auc
-        fake_auc = fake_auc.argsort()[::-1]
-        # take the top_k rows
-        fake_auc = fake_auc[:top_k]
-        vmax = max(vmax, dataframes[k].values[fake_auc, :target_coverages_n//2].max())
-    minimum-=0.007
-    vmax+=0.007
+            fake_auc = dataframes[k].copy().values[:,:target_coverages_n//2].sum(axis=1)
+            # sort the fake_auc
+            fake_auc = fake_auc.argsort()[::-1]
+            # take the top_k rows
+            fake_auc = fake_auc[:top_k]
+            vmax = max(vmax, dataframes[k].values[fake_auc, :target_coverages_n//2].max())
+        minimum-=0.007
+        vmax+=0.007
+    else:
+        minimum = None
+        vmax = None
     print("vmax",vmax)
     print("minimum",minimum)
     # create the latex tables
@@ -840,9 +845,10 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                 target_coverages=column_values,
                 all_original_scores=all_original_scores,
                 model_name=k,
-                minimumm=minimum,
-                vmaxx=vmax,
-                indx=indx)
+                minimumm=minimum,vmaxx=vmax,
+                selective= selective,
+                indx=indx,
+                )
     
         # Set title (not sure if it is needed)
         # plt.suptitle(
@@ -882,7 +888,7 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                                  )
     fig_path = os.path.join(
         plot_dir,
-        fig_name+"_"+k+".pdf"
+        fig_name+"_"+selective+".pdf"
     )
     plt.tight_layout()
     if show:
@@ -895,10 +901,10 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         plt.savefig(fig_path.replace(".pdf", ".png"))
         plt.close(fig)
     # the legend
-    create_legend_file(plotted_methods, "Black Box", name_dataset.replace(" ","_"))
+    create_legend_file(plotted_methods, "Black Box", name_dataset.replace(" ","_")+"_"+selective)
 
     # make sure the tables directory exists
-    table_name = "latex_table_" + name_dataset.replace(" ","_")+".tex"
+    table_name = "latex_table_"+selective+"_"+ name_dataset.replace(" ","_")+".tex"
     path = os.path.join("results","tables")
     os.makedirs(path, exist_ok=True)
     # save the latex tables
@@ -910,6 +916,7 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         for k in models.keys():
             #print(big_tables[k])
             f.write(latex_tables[k])
+
     return
     
 
@@ -933,7 +940,11 @@ def main():
     models = load_or_train_models(config, splits, args.dataset)
     print(name_dataset_command)
     print("processing dataset",name_dataset_command[fancy_dataset_names[args.dataset]])
-    all_dataframes = {}
+    all_all_dataframes = {m:{} for m in [
+                                    "rejection_quality_dict",
+                                    "classification_quality_dict",
+                                    "rejected_by_coverage"
+    ]}
     # Load distance statistics for the cf_methods 
     for cf_method in ["ils","ils_latent","lore","dice"]:
         if cf_method == "ils_latent":
@@ -964,30 +975,46 @@ def main():
         
         # Evaluate all rejectors
         metric_dicts = evaluate_rejectors(models, rejectors, splits, metric_dicts, info)
-    
-        # Create dataframes for visualization
-        dataframes = create_dataframes(models, metric_dicts, info)
-        print(type(dataframes["mlp"]), dataframes["mlp"].columns)
-        # dataframes is a dict of dataframes, the key is the model, the value the dataframe
-        if cf_method == "ils":
-            if args.latent:
-                cf_method = "ils<latent"
-        for km in dataframes.keys():
-            # remove the name CFDistRejector from the indexes and replace it by the cf_method
-            dataframes[km].index = [(f"{cf_method}_{col}" if col not in ["PlugInRule", "PlugInRuleAUC"] else col) for col in dataframes[km].index]
-        for km in dataframes.keys():
-            if km not in all_dataframes.keys():
-                all_dataframes[km] = dataframes[km]
-            else:
-                # drop the raws relatively to the PlugInRule and PlugInRuleAUC
-                dataframes[km] = dataframes[km].drop(["PlugInRule", "PlugInRuleAUC"], axis=0)
-                all_dataframes[km] = pd.concat([all_dataframes[km], dataframes[km]], axis=0)
+        for jjjjj,selective in enumerate([
+            "rejection_quality_dict",
+            "classification_quality_dict",
+            "rejected_by_coverage"
+            ]):
+            dataframes_ = create_dataframes(models,metric_dicts, info,
+                                            selective_metric=selective)
+            # Create dataframes for visualization
+            # dataframes = create_dataframes(models, metric_dicts, info,
+            #                             selective_metric="rejected_by_coverage")
+            
+            print(type(dataframes_["mlp"]), dataframes_["mlp"].columns)
+            # dataframes is a dict of dataframes, the key is the model, the value the dataframe
+            if cf_method == "ils":
+                if args.latent:
+                    cf_method = "ils<latent"
+            for km in dataframes_.keys():
+                # remove the name CFDistRejector from the indexes and replace it by the cf_method
+                dataframes_[km].index = [(f"{cf_method}_{col}" if col not in ["PlugInRule", "PlugInRuleAUC"] else col) for col in dataframes_[km].index]
+            for km in dataframes_.keys():
+                if km not in all_all_dataframes[selective].keys():
+                    all_all_dataframes[selective][km] = dataframes_[km]
+                else:
+                    # drop the raws relatively to the PlugInRule and PlugInRuleAUC
+                    dataframes_[km] = dataframes_[km].drop(["PlugInRule", "PlugInRuleAUC"], axis=0)
+                    all_all_dataframes[selective][km] = pd.concat([all_all_dataframes[selective][km], dataframes_[km]], axis=0)
     # Visualize results using the all_dataframes
     print("Visualizing results")
     # now is different, because we have all the cf_methods, so we need to iterate over the dataset only
     fig_name = f"selective_classifier_{args.dataset}_results"
     dataset_name = fancy_dataset_names[args.dataset]
-    visualise_results(models, all_dataframes, info, dataset_name, plot_dir,fig_name=fig_name)
+    for jjjjj,selective in enumerate([
+        "rejected_by_coverage",
+        "rejection_quality_dict",
+        "classification_quality_dict",
+        ]):
+        visualise_results(models, all_all_dataframes[selective],
+                           info, dataset_name,
+                            plot_dir,fig_name=fig_name,
+                            selective=selective)
 
 if __name__ == "__main__":
     main()
