@@ -7,6 +7,8 @@ data:
     path: "data/raw/adult48k.csv"
   breast_cancer:
     path: "data/raw/breast_cancer.csv"
+  compass:
+    path: "data/raw/compass.csv"
   eye:
     path: "data/raw/eye.csv"
 

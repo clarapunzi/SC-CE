@@ -691,7 +691,7 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
             ylab = "Rejection Quality"
         elif selective == "classification_quality_dict":
             ylab = "Classification Quality"
-        ax.set_ylabel(ylab, fontsize=21)
+        ax.set_ylabel(ylab, fontsize=24)
     if indx == 3:
         # place the yticklabels on the right
         ax.yaxis.tick_right()
@@ -1015,6 +1015,19 @@ def main():
                            info, dataset_name,
                             plot_dir,fig_name=fig_name,
                             selective=selective)
+    # finally save the results in a pickle file, so that we can load them later,
+    # the file is a pickle. If there exist the file CONCAT_RESULTS.pkl, 
+    # it will be loaded and the new results will be updated (it is a huge dictionary, ù
+    # the first key is the dataset name, the value is the all_all_dataframes dict)
+    if not os.path.exists(f"general_results.pkl"):
+        already_computed = {args.dataset: all_all_dataframes}
+    else:
+        with open(f"general_results.pkl", "rb") as f:
+            already_computed = pickle.load(f)
+        already_computed[args.dataset] = all_all_dataframes
+
+    with open(f"general_results.pkl", "wb") as f:
+        pickle.dump(already_computed, f)
 
 if __name__ == "__main__":
     main()
