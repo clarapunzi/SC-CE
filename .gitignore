@@ -59,3 +59,9 @@ counterfactuals/cf_generators/dice/time_to_generate.txt
 toy_dataset.pdf
 
 oldresults_deleateable/*
+
+# buit incldue with the negative value the counterfactuals folder 
+!counterfactuals/mlp/adult48k/*.npz
+!counterfactuals/random_forest/adult48k/*.npz
+!counterfactuals/xgboost/adult48k/*.npz
+!counterfactuals/lgbm/adult48k/*.npz
