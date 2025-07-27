@@ -28,7 +28,7 @@ import rejectmodels.CFTreeRejector as cftree
 def parse_arguments():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Selective Classifiers Analysis for Counterfactual Examples')
-    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset'],
+    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'breast_cancer','german_credit', 'toy_dataset'],
                         help='Name of the dataset to analyze')
     # parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore'],
     #                    help='Counterfactual generation method')
