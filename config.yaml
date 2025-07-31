@@ -45,7 +45,7 @@ models:
     model__max_iter: [150, 300, 500]
 
 counterfactuals:
-  num_counterfactuals: 8
+  num_counterfactuals: 32
   dice:
     proximity_weight: 0.5
     method: "kdtree"
