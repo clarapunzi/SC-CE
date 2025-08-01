@@ -3,6 +3,7 @@
 datasets=("german_credit" "toy_dataset" "adult48k")
 datasets=("adult48k" "german_credit" "toy_dataset")
 datasets=("toy_dataset" "german_credit" "adult48k")
+datasets=("breast_cancer")
 i=0
 for dataset in "${datasets[@]}"; do
     # if i%2==0; then cat banner.txt; fi else cat banner2.txt
