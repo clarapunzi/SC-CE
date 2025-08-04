@@ -1,5 +1,5 @@
 # L2R-CE: A Method for Explaining the Reject Option
-# Learning to Reject with Counterfactual Data Augmentation
+<!--# Learning to Reject with Counterfactual Data Augmentation-->
 finding the best threshold!
 
 The main script will perform a *cross-fold validation* and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
