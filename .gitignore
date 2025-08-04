@@ -64,18 +64,24 @@ oldresults_deleateable/*
 !counterfactuals/mlp/toy_dataset/*.npz
 !counterfactuals/mlp/adult48k/*.npz
 !counterfactuals/mlp/german_credit/*.npz
+!counterfactuals/mlp/breast_cancer/*.npz
 
 
 !counterfactuals/xgboost/adult48k/*.npz
 !counterfactuals/xgboost/german_credit/*.npz
 !counterfactuals/xgboost/toy_dataset/*.npz
+!counterfactuals/xgboost/breast_cancer/*.npz
 
 !counterfactuals/random_forest/adult48k/*.npz
 !counterfactuals/random_forest/german_credit/*.npz
 !counterfactuals/random_forest/toy_dataset/*.npz
+!counterfactuals/random_forest/breast_cancer/*.npz
 
 !counterfactuals/lgbm/adult48k/*.npz
 !counterfactuals/lgbm/german_credit/*.npz
 !counterfactuals/lgbm/toy_dataset/*.npz
+!counterfactuals/lgbm/breast_cancer/*.npz
+!counterfactuals/lgbm/breast_cancer
+
 
 
