@@ -1,4 +1,4 @@
-## L2CE
+# L2R-CE: A Method for Explaining the Reject Option
 # Learning to Reject with Counterfactual Data Augmentation
 finding the best threshold!
 
