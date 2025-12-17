@@ -1,33 +1,42 @@
-# Learning to Reject with Counterfactual Data Augmentation
+# L2R-CE: A Method for Explaining the Reject Option
+<!--# Learning to Reject with Counterfactual Data Augmentation-->
 finding the best threshold!
 
-The main script will perform a cross-fold validation and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
+The main script will perform a *cross-fold validation* and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
 ``` python main.py --dataset german```
 
-The remaining part of the code is in the notebooks: (it should be refactored into scripts, for better reproducibility and scalability)
+The remaining part of the code is in the notebooks: (it is also refactored into scripts, for better reproducibility and scalability)
 
 To compute the distances of the counterfactuals, generated at te previous step
-- 1_compute_distances.ipynb
+```
+1_compute_distances.ipynb
+```
 
 To compute the distances of the counterfactuals generated at te previous step using the ILS method
-- 2_compute_latent_distances.ipynb
+```
+2_compute_latent_distances.ipynb
+```
 
 To plot the distances and the correlation between the distances and the confidence of the classifier
-- 3_correlation_and_distances_plot.ipynb
+```
+3_correlation_and_distances_plot.ipynb
+```
     
 To wrap the classifiers and compute the metrics for the selective classifiers
-- 4_selective_classifiers.ipynb
 
+```
+4_selective_classifiers.ipynb
+```
 
-The scripts version of 4_selective_classifiers.ipynb do the same thing as the notebook, but takes into consideration all the different counterfactuals generators methods.
+The scripts version of ```4_selective_classifiers.ipynb``` do the same thing as the notebook, but takes into consideration all the different counterfactuals generators methods and it's called ```selective_classifiers.py```
 
-# IDEA
-Instead of only the prediction threshold XOR the distance threshold, we could use a combination of both. 
-Than train a decision tree to learn the rules that optimize the performance of the classifier looking at the confidence of the classifier and the distance of the counterfactuals (we can still use the min, max, mean, also different measures of the distance)
+<!-- # IDEA
+ Instead of only the prediction threshold XOR the distance threshold, we could use a combination of both. 
+Than train a decision tree to learn the rules that optimize the performance of the classifier looking at the confidence of the classifier and the distance of the counterfactuals (we can still use the min, max, mean, also different measures of the distance)-->
 
 ### The main idea is to use the counterfactuals to learn the best threshold for the classifier
 
-Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality and rejection_classification_report. 
+Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality.
 <!--
 TODO datasets:
 - [ ] add income dataset
@@ -42,6 +51,7 @@ TODO refactorings:
 
 -->
 DONE:
+- [x] multiprocess computation of conterfactuals for different models
 - [x] add the lore genetic 
 - [x] add the ILS cf generator
 - [x] save the counterfactuals as well as the rule and the tree for each sample
