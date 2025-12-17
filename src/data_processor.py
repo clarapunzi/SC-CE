@@ -14,11 +14,13 @@ from src.toy_dataset import generate_toy
 fancy_dataset_names = {
             "german_credit": "German Credit",
             "adult48k": "Adult",
-            "toy_dataset": "Two Moons"
+            "toy_dataset": "Two Moons",
+            "breast_cancer": "Breast Cancer",
         }
-name_dataset_command = {"German Credit": "\german",
+name_dataset_command = {"German Credit": "\\german",
                         "Adult": "\\adult",
                         "Two Moons":"\\twomoons",
+                        "Breast Cancer": "\\breastcancer",
                         }
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""

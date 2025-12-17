@@ -14,8 +14,7 @@ import matplotlib.pyplot as plt
 
 from src.cf_generator_base import CFGeneratorBase
 from src.utils import write_time
-import src.cp_ils.cpils as cpils
-
+from src.cp_ils.cpils import CP_ILS
 warnings.filterwarnings("ignore",
                 message="X has feature names, but StandardScaler was fitted without feature names")
 class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
@@ -37,6 +36,7 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         self.learning_rate = learning_rate
         self.sigma = sigma
         self.latent_model = None
+        self.idx_cat = []  # Assume all features are numerical
         # the following needs to be static for the hyperparameter search
         # self.base_model_ = model
         # self.X_validation_ = X_calibration
@@ -46,7 +46,7 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         X and y parameters are ignored but kept for sklearn compatibility.
         """
         # Initialize the latent model with current hyperparameters
-        self.latent_model = cpils.CP_ILS(
+        self.latent_model = CP_ILS(
             self.base_model_.predict,
             self.base_model_.predict_proba,
             latent_dim=self.latent_dim,
@@ -58,7 +58,6 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         )
 
         # Fit using stored training and calibration data
-        self.idx_cat = []  # Assume all features are numerical
         self.losses_ = self.latent_model.fit(
             (X, self.X_validation_),
             self.idx_cat,
@@ -90,9 +89,16 @@ class CPILSSklearnWrapper(BaseEstimator,TransformerMixin):
         """
         Returns the counterfactuals for the input data.
         """
-        return self.latent_model.get_counterfactuals(df_test, features_to_change,
-                                max_features_to_change,
-                                max_steps, n_cfs, n_feats_sampled, topn_to_check, seed)
+        return self.latent_model.get_counterfactuals(df_test=df_test,
+                                                     features_to_change=features_to_change,
+                                                     max_features_to_change=max_features_to_change,
+                                                     max_steps=max_steps,
+                                                     n_cfs=n_cfs,
+                                                     n_feats_sampled=n_feats_sampled,
+                                                     topn_to_check=topn_to_check,
+                                                     seed=seed
+                                                     )
+    
     def set_params(self, **parameters):
         """
         Set the parameters of this estimator.
@@ -285,7 +291,8 @@ class IlsCFGenerator(CFGeneratorBase):
             # Setup model-specific components if not already done
             start = time.time()
             self._setup_model_components(model, model_name, X_calibration, y_calibration)
-            latent = self._explainers[model_name]
+            # clarify that latent is the CP_ILS object so that the linter does not complain
+            latent: CP_ILS = self._explainers[model_name]
             model_results = []
             # change them all if needed
             change_f =  list(range(X_calibration.values.shape[1]))
@@ -310,8 +317,14 @@ class IlsCFGenerator(CFGeneratorBase):
                                                     seed=69)
                 # cf_result is a couple.
                 #  The first element is the dataframe with the counterfactuals in the original space
-                # the second element is the dataframe with the counterfactuals in the latent space
+                # the second element is the dataframe with the counterfactuals in the latent space AND the predicted class
                 # we save them BOTH in the results dictionary
+                print(f"Counterfactuals generated for instance {idx} with label {label}")
+                print("cf_result", cf_result)
+                #do the proper checks: the first element of the tuple has as many rows as the elemtns of the second tuple.
+                # the second element is the latent space representation of the counterfactuals and the predicted class for the instances
+                assert cf_result[0].shape[0] == cf_result[1].shape[0], f'cf has shapes {cf_result[0].shape} and {cf_result[1].shape}'
+                print(f"Counterfactuals shape: {cf_result[0].shape}, Latent shape: {cf_result[1].shape}")
                 res_dictionary = {'instance_idx': idx,
                         'original_instance': instance,
                         'true_class': label,
