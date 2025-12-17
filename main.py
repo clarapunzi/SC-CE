@@ -13,6 +13,7 @@ from src.model_trainer import ModelTrainer
 from src.cf_generator_dice import DiceCFGenerator
 from src.cf_generator_ils import IlsCFGenerator
 from src.cf_generator_lore import LoreCFGenerator
+from src.cf_generator_gs import GrowingSpheresCFGenerator
 from src.utils import load_config, check_file_exists
 
 
@@ -42,9 +43,11 @@ def run_pipeline(
         cf_generator = IlsCFGenerator(config=config,
                                        dataset_name=dataset_name,
                                        )
-
     elif cf_method == "lore":
         cf_generator = LoreCFGenerator(config=config,
+                                       dataset_name=dataset_name)
+    elif cf_method == "growing_spheres":
+        cf_generator = GrowingSpheresCFGenerator(config=config,
                                        dataset_name=dataset_name)
     ########################################
     ######### Data Processing Phase ########
@@ -125,9 +128,9 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     parser = argparse.ArgumentParser(description="Run the counterfactual generation pipeline")
     parser.add_argument("--dataset", type=str,
-                        help="The name of the dataset to use",default="adult48k")
+                        help="The name of the dataset to use",default="breast_cancer")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="lore")
+                        help="The counterfactual generation method to use",default="growing_spheres")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()

@@ -128,7 +128,7 @@ def create_plot_distances(dictionary,
 
 def main():
     parser = argparse.ArgumentParser(description='Correlations and Distance Plots for Counterfactual Analysis')
-    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset'],
+    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset','breast_cancer'],
                         help='Name of the dataset to analyze')
     parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore'],
                         help='Counterfactual generation method')

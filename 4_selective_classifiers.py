@@ -441,10 +441,10 @@ def create_dataframes(models, metric_dicts, info,
 
 def fancy_names(name):
     """Return a cooler name for the selective classifier"""
-    if name == "PlugInRule":
-        return "PlugInRule"
-    elif name == "PlugInRuleAUC":
+    if "PlugInRuleAUC" in name:
         return "PlugInRuleAUC"
+    elif "PlugInRule" in name:
+        return "PlugInRule"
     else:
         """Return a cooler name for the selective classifier"""
         if name.endswith("duplicate"):
@@ -477,7 +477,7 @@ def fancy_names(name):
             method = method.upper()
         distance = name.split("_")[2]
         
-        newn= method+tree+" - "+distance+"$"+apex+distr+"$" #+ duplicate_flag
+        newn= method+tree+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
         # print(name,newn)
         return newn
 
@@ -810,8 +810,8 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         for i in range(len(df)):
             if (df.iloc[i, :-1] < all_original_scores[k]).any():
                 df["flag"].iloc[i] = -20
-                print("flag",df.iloc[i, :].index,"has a value lower than the original model")
-                print(df.iloc[i, :]< all_original_scores[k])
+                #print("flag",df.iloc[i, :].index,"has a value lower than the original model")
+                #print(df.iloc[i, :]< all_original_scores[k])
         # Get indices of top performing methods by sum across coverages
         fake_auc = df.values.sum(axis=1).argsort()[::-1]
         

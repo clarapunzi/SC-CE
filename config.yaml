@@ -53,6 +53,9 @@ counterfactuals:
     method: "latent"
     search_best: True
   growing_spheres:
-    lambda_param: 0.1
+    n_in_layer: 200
+    first_radius: 0.05
+    dicrease_radius: 2.0
+    sparse: True
   lore:
     method: "genetic"
