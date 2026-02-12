@@ -54,8 +54,21 @@ class CFDistRejector(ClassifierMixin, BaseEstimator):
         if use_gamma:
             from scipy import stats
             # Fit the gamma distribution but remove the non finite values
-            fit_alpha, fit_loc, fit_beta=stats.gamma.fit(target_distances[np.isfinite(target_distances)])
-            self.deltas = [stats.gamma.ppf(q, fit_alpha, loc=fit_loc, scale=fit_beta) for q in self.quantiles]
+            # if there are not diverse values we cannot fit the distribution
+            if np.std(target_distances[np.isfinite(target_distances)]) < 1e-6:
+                self.deltas = [target_distances[0]]* (len(self.quantiles)-2)
+                self.deltas = [0.0] + self.deltas + [target_distances[0]+1e-3]
+                self.deltas = np.array(np.sort(self.deltas))
+            else:
+                try:
+                    fit_alpha, fit_loc, fit_beta=stats.gamma.fit(target_distances[np.isfinite(target_distances)])
+                except Exception as e:
+                    print("Could not fit gamma distribution:", e)
+                    print("The distances are:", np.round(target_distances, 2))
+                    raise ValueError(f"Error fitting gamma distribution: {e}")
+            
+                self.deltas = [stats.gamma.ppf(q, fit_alpha, loc=fit_loc, scale=fit_beta) for q in self.quantiles]
+
 
     def predict_proba(self, X):
         """

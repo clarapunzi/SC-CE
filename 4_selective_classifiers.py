@@ -142,10 +142,21 @@ def get_focus_metrics():
     """Define the distance metrics to focus on"""
     """
     """
-    #return ["cosine","l2"]
     return [
-        'inf', 'cosine', 'braycurtis',
-        'chebyshev', 'l2', 'minkowski', 'wasserstein', 'l1', 'mae', 'sqeuclidean'
+        'inf', # 'chebyshev', 
+        'l2', # 'minkowski',
+        'sqeuclidean',
+        'mae', #'l0', 'hamming', # l0 and hamming are the same for continuous data 
+        'cosine',
+        'correlation',
+        'canberra',
+        'braycurtis',
+        #'hamming', # 'l0', # this is not very informatieve
+        # 'wasserstein', # wasserstein excluded because is very very similar to l1
+        'spearman',
+        'kendall',
+        'centered_cosine',
+        'centered_l2',
         ]
 
 def initialize_rejectors(models, splits):
@@ -458,6 +469,7 @@ def fancy_names(name):
             name = name.replace("_gamma", "")
         else:
             apex = ""
+        
         if name.split("_")[1] == "CFDistRejector":
             tree = ""
         elif name.split("_")[1] == "CFTreeRejector":
@@ -473,10 +485,13 @@ def fancy_names(name):
 
         if method == "ils<latent":
             method = "ILS$_{latent}$"
+        elif "GROWING" in method.upper():
+            method = "GS"
         else:
             method = method.upper()
         distance = name.split("_")[2]
-        
+        if "GROWING" in method:
+            print(name, distance, method)
         newn= method+tree+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
         # print(name,newn)
         return newn
@@ -589,11 +604,11 @@ def simplified_plot_styling(method_name):
         # Purple
         'l2': '#9467bd',          
         # Brown
-        'minkowski': '#8c564b',   
+        # 'minkowski': '#8c564b',   
         # Pink
         'wasserstein': '#e377c2', 
         # dark blue
-        'l1': '#5f7e0b',
+        # 'l1': '#5f7e0b',
         # Yellow-green
         'mae': '#bcbd22',         
         # Cyan
@@ -605,7 +620,7 @@ def simplified_plot_styling(method_name):
     style['ls'] = '-'
     style['marker'] = 'o'
     style['color'] = 'blue'
-    style['linewidth'] = 1.5
+    style['linewidth'] = 1
     style['markersize'] = 8
     
     # Check for baseline methods
@@ -633,6 +648,8 @@ def simplified_plot_styling(method_name):
         style['color'] = '#2ca02c'  # Green
     elif 'ils' in method_name:
         style['color'] = '#d62728'  # Red
+    elif 'spheres' in method_name:
+        style['color'] = '#9467bd'  # Purple
     if 'min' in method_name:
         style['linewidth']= 2.5
         style["ls"] = ':'
@@ -861,7 +878,7 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         big_tables[k] = generate_latex_table(ldf=df,
                                            black_box_score=all_original_scores[k],
                                            black_box_name=k,
-                                top_policies= list(fake_auc)[:24],
+                                top_policies= list(fake_auc),
                                 top_policies_names=[fancy_names(fnam) for fnam in df.index[fake_auc]],
                                 target_coverages=column_values,
                                 dataset_name=name_dataset,
@@ -946,7 +963,7 @@ def main():
                                     "rejected_by_coverage"
     ]}
     # Load distance statistics for the cf_methods 
-    for cf_method in ["ils","ils_latent","lore","dice"]:
+    for cf_method in ["growingspheres","ils","ils_latent","lore","dice"]:
         if cf_method == "ils_latent":
             args.latent = True
             cf_method = "ils"

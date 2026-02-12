@@ -52,7 +52,7 @@ counterfactuals:
   ils:
     method: "latent"
     search_best: True
-  growing_spheres:
+  growingspheres:
     n_in_layer: 200
     first_radius: 0.05
     dicrease_radius: 2.0

@@ -1,5 +1,15 @@
-# L2R-CE: A Method for Explaining the Reject Option
-<!--# Learning to Reject with Counterfactual Data Augmentation-->
+<!--#
+Dice Clara, che assumeva la continuità "locale".
+I piani d'attacco sono 2.
+1 rilanciamo gli experimients guardando i modelli con la continuità Lipshitz continuo.
+
+Train a mlp regolarizzato o SVM
+posso rilassare questa cosa per qualsiasi modello? Mi sto perdendo qualocosa ma è così importante?  
+
+Le proprietà dei controfattuali 
+
+-->
+# SC-CE: A Method for Explaining the Reject Option
 finding the best threshold!
 
 The main script will perform a *cross-fold validation* and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
@@ -39,26 +49,26 @@ Than train a decision tree to learn the rules that optimize the performance of t
 Inside the old code, there is a file called utils.py. Inside it there is a function called coumpute_rejection_policy and within, it calls the functions nonrejected_accuracy, classification_quality, rejection_quality.
 <!--
 TODO datasets:
-- [ ] add income dataset
 TODO:
 - [ ] Separate the computation of the counterfactuals in chunks
 - [ ] test the other lore generators (check the naming of the saved files)
-- [ ] add GROWING SPHERES
 
 TODO refactorings:
 - [ ] remove the debug* notebook files from main folder
-- [ ] add ALL the remaining metrics (2)
 
 -->
 DONE:
 - [x] multiprocess computation of conterfactuals for different models
 - [x] add the lore genetic 
 - [x] add the ILS cf generator
+- [x] add GROWING SPHERES
+- [x] add ALL the remaining metrics (2)
 - [x] save the counterfactuals as well as the rule and the tree for each sample
 dataset:
 - [x] Add the winsconsin dataset (https://archive.ics.uci.edu/ml/datasets/Wisconsin+Breast+Cancer)
 - [x] add toydataset
 - [x] add german credit
+- [x] add income dataset
 - [x] create class SelectiveClassifier for CFDistRejector, which will be a wrapper for the classifier and will have the method predict_proba and predict, calibrate and others.
 - [x] add the adult dataset
 refactorings:

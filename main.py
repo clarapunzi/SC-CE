@@ -46,7 +46,7 @@ def run_pipeline(
     elif cf_method == "lore":
         cf_generator = LoreCFGenerator(config=config,
                                        dataset_name=dataset_name)
-    elif cf_method == "growing_spheres":
+    elif cf_method == "growingspheres":
         cf_generator = GrowingSpheresCFGenerator(config=config,
                                        dataset_name=dataset_name)
     ########################################
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     parser = argparse.ArgumentParser(description="Run the counterfactual generation pipeline")
     parser.add_argument("--dataset", type=str,
-                        help="The name of the dataset to use",default="breast_cancer")
+                        help="The name of the dataset to use",default="adult48k")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="growing_spheres")
+                        help="The counterfactual generation method to use",default="growingspheres")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()

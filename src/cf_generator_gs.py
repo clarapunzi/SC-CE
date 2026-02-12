@@ -25,13 +25,13 @@ class GrowingSpheresCFGenerator(CFGeneratorBase):
     def __init__(self, config: Dict[str, Any],dataset_name:str):
         super().__init__(config,dataset_name)
         self.config = config
-        self.n_in_layer = config["counterfactuals"]["growing_spheres"].get("n_in_layer",200)
-        self.first_radius = config["counterfactuals"]["growing_spheres"].get("first_radius",1.1)
-        self.dicrease_radius = config["counterfactuals"]["growing_spheres"].get("dicrease_radius",2.0)
-        self.sparse = config["counterfactuals"]["growing_spheres"].get("sparse",True)
-        self._method = "growing_spheres"
+        self.n_in_layer = config["counterfactuals"]["growingspheres"].get("n_in_layer",200)
+        self.first_radius = config["counterfactuals"]["growingspheres"].get("first_radius",1.1)
+        self.dicrease_radius = config["counterfactuals"]["growingspheres"].get("dicrease_radius",2.0)
+        self.sparse = config["counterfactuals"]["growingspheres"].get("sparse",True)
+        self._method = "growingspheres"
     def _get_method_name(self) -> str:
-        return "growing_spheres"
+        return "growingspheres"
 
     def setup(self,
               reference_data: pd.DataFrame,
@@ -59,9 +59,9 @@ class GrowingSpheresCFGenerator(CFGeneratorBase):
                                 X_calibration=None,y_calibration=None
                                 )->None:
         """
-        Setup the model components for growing_spheres.
+        Setup the model components for growingspheres.
         """
-        # growing_spheres does not need model-specific components,
+        # growingspheres does not need model-specific components,
         # it is highly practical and this method is a no-op (but needed for implementation).
         pass
 
