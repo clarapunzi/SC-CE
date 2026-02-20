@@ -14,6 +14,7 @@ import lightgbm as lgb
 import xgboost as xgb
 import wandb
 from .inner_cross_val import perform_single_cv, log_cv_results
+from .LipschitzMLP.torchLipMLP_wrapper import TorchLipschitzMLPClassifier
 
 class ModelTrainer:
     """Handles training and management of multiple models."""
@@ -24,6 +25,10 @@ class ModelTrainer:
 
         # Define model configurations
         self.model_configs = {
+            "lip_mlp": {
+                "model": TorchLipschitzMLPClassifier(),
+                "params": self.config['models']['lipshitzmlp_params']
+                },
             "random_forest": {
                 "model": RandomForestClassifier(),
                 "params": self.config['models']['rf_params']
@@ -36,13 +41,11 @@ class ModelTrainer:
                 "model": xgb.XGBClassifier(),
                 "params": self.config['models']['xgb_params']
             },
-        "lgbm": {
-                "model": lgb.LGBMClassifier(),
-                "params": self.config['models']['lgbm_params']
-            }
+            "lgbm": {
+                    "model": lgb.LGBMClassifier(),
+                    "params": self.config['models']['lgbm_params']
+                }
         }
-        '''
-        '''
 
 
     def _get_model_path(self, model_name: str, dataset_name: str) -> str:

@@ -43,7 +43,12 @@ models:
     model__hidden_layer_sizes: [[32], [64], [32,32], [64, 32]]
     model__learning_rate_init: [0.001, 0.01, 0.1]
     model__max_iter: [150, 300, 500]
-
+  lipshitzmlp_params:
+    model__hidden_layer_sizes: [[32], [64], [32,32], [64, 32]]
+    model__init_cis: ["auto"]
+    model__lipschitz_lambda: [0.0001, 0.001, 0.01]
+    model__learning_rate_init: [0.001, 0.01, 0.1]
+    model__max_iter: [150, 300, 500]
 counterfactuals:
   num_counterfactuals: 32
   dice:

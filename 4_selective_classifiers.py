@@ -23,7 +23,6 @@ from src.model_trainer import ModelTrainer
 from src.utils import compute_selective_metrics
 from OLD_src.Lib.L2R.code.model_agnostic import PlugInRule, PlugInRuleAUC, SCRoss
 import rejectmodels.CFDistRejector as cfdr
-import rejectmodels.CFTreeRejector as cftree
 
 def parse_arguments():
     """Parse command line arguments"""
@@ -139,8 +138,10 @@ def convert_lists_to_arrays(models, statistics):
 
     return statistics
 def get_focus_metrics():
-    """Define the distance metrics to focus on"""
     """
+    Define the distance metrics to focus on.
+    To compare check the correlation between the different metrics among themselves from the notebook
+    "
     """
     return [
         'inf', # 'chebyshev', 
@@ -233,16 +234,16 @@ def initialize_rejectors(models, splits):
                     included_samples[k][selective_c] = np.zeros(target_coverages_n)
 
                     # Initialize for tree-based rejectors
-                    selective_c = "CFTreeRejector_" + metric + "_" + m_type + ("_gamma" if gamma_flag else "")
-                    tree_rejectors[k][selective_c] = cftree.CFTreeRejector(
-                        model=models[k],
-                        coverages=target_coverages
-                    )
+                    # selective_c = "CFTreeRejector_" + metric + "_" + m_type + ("_gamma" if gamma_flag else "")
+                    # tree_rejectors[k][selective_c] = cftree.CFTreeRejector(
+                    #     model=models[k],
+                    #     coverages=target_coverages
+                    # )
                     # Initialize result dictionaries for this rejector
-                    rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
-                    classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
-                    rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
-                    included_samples[k][selective_c] = np.zeros(target_coverages_n)
+                    # rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    # classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
+                    # rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
+                    # included_samples[k][selective_c] = np.zeros(target_coverages_n)
                     
     
     # Group metric dictionaries
@@ -452,6 +453,7 @@ def create_dataframes(models, metric_dicts, info,
 
 def fancy_names(name):
     """Return a cooler name for the selective classifier"""
+    name = name.replace("centered_l2", "centered L2").replace("centered_cosine", "centered cosine")
     if "PlugInRuleAUC" in name:
         return "PlugInRuleAUC"
     elif "PlugInRule" in name:
@@ -731,7 +733,7 @@ def create_legend_file(top_policies_names, model_name,dt_name):
     top_policies_names = list(set(top_policies_names))
     metric_methods = top_policies_names
     # place pluginrule and pluginruleauc at the beginning
-    metric_methods = ["PlugInRule", "PlugInRuleAUC"] + [e for e in metric_methods if e not in ["PlugInRule", "PlugInRuleAUC"]] 
+    metric_methods = ["PlugInRule", "PlugInRuleAUC", "Original Black Box"] + [e for e in metric_methods if e not in ["PlugInRule", "PlugInRuleAUC", "Original Black Box"]] 
     for name in metric_methods:
         style = simplified_plot_styling(name)
         label = name
@@ -750,7 +752,10 @@ def create_legend_file(top_policies_names, model_name,dt_name):
     # Save just the legend
     fig.savefig(f"results/legend_metrics_{dt_name}.pdf", bbox_inches='tight')
     #plt.close(fig)
-
+fancy_model = {"mlp": "mlp",
+               "random_forest": "RF",
+               'xgboost': 'xgboost',
+               'lgbm': 'LGBM'}
 def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       fig_name="alternative_selective_classifiers",
                       show =False,
@@ -867,6 +872,8 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                 indx=indx,
                 )
     
+        # set title for the model
+        ax[indx].set_title(f"{fancy_model.get(k, k)}")
         # Set title (not sure if it is needed)
         # plt.suptitle(
         #     f"{name_dataset} - Model: {k}",
@@ -988,7 +995,7 @@ def main():
         # Calibrate basic rejectors
         rejectors = calibrate_basic_rejectors(models, rejectors, splits, all_stats, all_stats_test, info)
     
-        rejectors = calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats_test, info)
+        rejectors = calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats_test, info,calibrate_trees=False)
         
         # Evaluate all rejectors
         metric_dicts = evaluate_rejectors(models, rejectors, splits, metric_dicts, info)

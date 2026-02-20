@@ -1,10 +1,14 @@
 #!/bin/bash
 cat banner.txt
-datasets=("german_credit" "adult48k")
+datasets=("toy_dataset" "german_credit" "adult48k" "breast_cancer")
+cf_generators=("growingspheres" "dice" "ils" "lore")
 
 for dataset in "${datasets[@]}"; do
-    command="python main.py --dataset $dataset --cf_method lore > L2LOREOUT_$dataset.OUT 2>&1 &"
-    echo $command
-    eval $command
-    wait
+    for cf_generator in "${cf_generators[@]}"; do
+        command="python main.py --dataset $dataset --cf_method $cf_generator > OUT_$dataset.$cf_generator.OUT 2>&1 &"
+        echo $command
+        eval $command
+        wait
+    done
 done
+
