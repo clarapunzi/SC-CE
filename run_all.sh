@@ -1,7 +1,7 @@
 #!/bin/bash
 cat banner.txt
-datasets=("toy_dataset" "german_credit" "adult48k" "breast_cancer")
-cf_generators=("growingspheres" "dice" "ils" "lore")
+datasets=("breast_cancer")
+cf_generators=("growingspheres" "ils" "lore" "dice")
 
 for dataset in "${datasets[@]}"; do
     for cf_generator in "${cf_generators[@]}"; do

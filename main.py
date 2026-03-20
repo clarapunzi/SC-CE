@@ -106,14 +106,14 @@ def run_pipeline(
         target_name=target_name,
     )
     print("Generating counterfactuals")
-    counterfactuals = cf_generator.generate_counterfactuals(
-        models=models,
-        X_calibration=splits['X_calibration'][:].copy(),
-        y_calibration=splits['y_calibration'][:].copy(),
-        num_cf=num_cf,
-        dt_name=dataset_name,
-        set_name="calibration"
-    )
+    # counterfactuals = cf_generator.generate_counterfactuals(
+    #     models=models,
+    #     X_calibration=splits['X_calibration'][:].copy(),
+    #     y_calibration=splits['y_calibration'][:].copy(),
+    #     num_cf=num_cf,
+    #     dt_name=dataset_name,
+    #     set_name="calibration"
+    # )
     counterfactuals = cf_generator.generate_counterfactuals(
         models=models,
         X_calibration=splits['X_test'][:].copy(),
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     mp.set_start_method('spawn')
     parser = argparse.ArgumentParser(description="Run the counterfactual generation pipeline")
     parser.add_argument("--dataset", type=str,
-                        help="The name of the dataset to use",default="adult48k")
+                        help="The name of the dataset to use",default="toy_dataset")
     parser.add_argument("--cf_method", type=str,
-                        help="The counterfactual generation method to use",default="growingspheres")
+                        help="The counterfactual generation method to use",default="dice")
     parser.add_argument("--config_path", type=str,
                         help="The path to the configuration file",default="config.yaml")
     args = parser.parse_args()
@@ -141,6 +141,7 @@ if __name__ == "__main__":
     # Create a list to keep track of processes
     processes = []
     model_types = ["mlp", "random_forest", "xgboost", "lgbm"]
+    model_types = ["lip_mlp"] # for testing purposes, we only run the Lipschitz MLP, to check that it works and that the code is correct, then we can run all the models in parallel
     try:
         # Start processes
         for model_type in model_types:

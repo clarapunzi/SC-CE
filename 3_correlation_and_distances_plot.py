@@ -128,9 +128,9 @@ def create_plot_distances(dictionary,
 
 def main():
     parser = argparse.ArgumentParser(description='Correlations and Distance Plots for Counterfactual Analysis')
-    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset','breast_cancer'],
+    parser.add_argument('--dataset', type=str, required=True, choices=['adult48k', 'german_credit', 'toy_dataset', 'breast_cancer'],
                         help='Name of the dataset to analyze')
-    parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore'],
+    parser.add_argument('--method', type=str, required=True, choices=['dice', 'ils', 'lore', 'growingspheres'],
                         help='Counterfactual generation method')
     parser.add_argument('--latent', action='store_true',
                         help='Use latent space for counterfactual generation')
@@ -160,7 +160,8 @@ def main():
     name_dataset = {
         "german_credit": "German Credit",
         "adult48k": "Adult",
-        "toy_dataset": "Toy Dataset"
+        "toy_dataset": "Toy Dataset",
+        "breast_cancer": "Breast Cancer"
     }[dt_name]
 
     # Find configuration file and load data
@@ -172,14 +173,19 @@ def main():
 
     # Train models
     model_trainer = ModelTrainer(config)
-    models = model_trainer.train_model(
+    all_models = model_trainer.train_model(
         X_train=splits['X_train'],
         y_train=splits['y_train'],
         X_test=splits['X_test'],
         y_test=splits['y_test'],
         dataset_name=dt_name
     )
-    print("Available models:", models.keys())
+    print("Available models:", all_models.keys())
+
+    # Define preferred model order and filter out lgbm
+    preferred_order = ['lip_mlp', 'mlp', 'random_forest', 'xgboost']
+    models = [m for m in preferred_order if m in all_models]
+    print("Selected models (in order):", models)
 
     # Load distance files
     fname = os.path.join(cf_method, dt_name + "_ranking_latent.pkl")
@@ -209,12 +215,12 @@ def main():
         return
 
     # Check if distances are computed for each model
-    for k in models.keys():
+    for k in models:
         print(k, "computed?", check_res(stats_dict=all_stats, k=k))
         print("\t", "test?", check_res(stats_dict=all_stats_test, k=k))
 
     # Convert lists to numpy arrays for all_stats
-    for k in models.keys():
+    for k in models:
         for metric in all_stats[k]['distances'].keys():
             for stat in ["min", "max", "mean", "std"]:
                 try:
@@ -225,13 +231,13 @@ def main():
                     for e in all_stats[k]['distances'][metric][stat]:
                         print(e)
 
-    for k in models.keys():
+    for k in models:
         all_stats[k]['probabs'] = np.array(all_stats[k]['probabs'])
         all_stats[k]['corrects'] = np.array(all_stats[k]['corrects']).reshape(-1)
         all_stats[k]['mean_conf'] = np.array(all_stats[k]['mean_conf'])
 
     # Convert lists to numpy arrays for all_stats_test
-    for k in models.keys():
+    for k in models:
         for metric in all_stats_test[k]['distances'].keys():
             for stat in ["min", "max", "mean", "std"]:
                 try:
@@ -242,7 +248,7 @@ def main():
                     for e in all_stats_test[k]['distances'][metric][stat]:
                         print(e)
 
-    for k in models.keys():
+    for k in models:
         all_stats_test[k]['probabs'] = np.array(all_stats_test[k]['probabs'])
         all_stats_test[k]['corrects'] = np.array(all_stats_test[k]['corrects']).reshape(-1)
         all_stats_test[k]['mean_conf'] = np.array(all_stats_test[k]['mean_conf'])
@@ -256,13 +262,13 @@ def main():
         all_stats_tmp = all_stats_test if compute_test else all_stats
         verbose = False
         correlations = {}
-        metrics = list(all_stats_tmp[list(models.keys())[0]]['distances'].keys())
+        metrics = list(all_stats_tmp[models[0]]['distances'].keys())
 
         for metric in metrics:
             correlations[metric] = {}
             correlations["found_cfs"] = {}
 
-            for k in models.keys():
+            for k in models:
                 mins = all_stats_tmp[k]['distances'][metric]['min'][:]
                 good_idxs = mins != np.inf
                 mins = mins[good_idxs]
@@ -293,7 +299,7 @@ def main():
 
         # Compare confidence of the model with mean confidence of counterfactuals
         correlations["mean_conf"] = {}
-        for k in models.keys():
+        for k in models:
             good_idx = all_stats_tmp[k]['distances']['l2']['min'] != np.inf
             if good_idx.sum() == 0:
                 correlations["mean_conf"][k] = np.nan
@@ -308,13 +314,13 @@ def main():
         for metric in metrics:
             metric_corr = []
             for stat in ["mean", "min", "max"]:
-                row = [correlations[metric][model][stat] for model in models.keys()]
+                row = [correlations[metric][model][stat] for model in models]
                 metric_corr.append(row)
             all_correlations.extend(metric_corr)
 
-        all_correlations.append([np.nan for model in models.keys()])
-        all_correlations.append([correlations["mean_conf"][model] for model in models.keys()])
-        all_correlations.append([np.nan for model in models.keys()])
+        all_correlations.append([np.nan for model in models])
+        all_correlations.append([correlations["mean_conf"][model] for model in models])
+        all_correlations.append([np.nan for model in models])
 
         all_correlations = np.array(all_correlations)
 
@@ -335,7 +341,7 @@ def main():
         gold_map_r = fplt.build_cmap(0.1, '#3c6b5e', '#fff1f9', '#deb062')
         sns.heatmap(all_correlations, annot=True, ax=ax, vmin=-1, vmax=1, cmap=gold_map_r)
         ax.set_yticks(0.5 + np.arange(len(y_labels)), y_labels, rotation=0)
-        ax.set_xticklabels([model + "\n" + str(correlations["found_cfs"][model]) for model in models.keys()])
+        ax.set_xticklabels([model + "\n" + str(correlations["found_cfs"][model]) for model in models])
         ax.set_title("Correlations between distances and output probability of the model")
         plt.xlabel("Models")
 
@@ -411,9 +417,9 @@ def main():
     # Find metrics with highest correlations
     max_correlations = []
     for j, m in enumerate(metrics):
-        mmax = max([abs(correlations[m][model]["min"]) for model in models.keys()])
-        mmean = max([abs(correlations[m][model]["mean"]) for model in models.keys()])
-        Mmax = max([abs(correlations[m][model]["max"]) for model in models.keys()])
+        mmax = max([abs(correlations[m][model]["min"]) for model in models])
+        mmean = max([abs(correlations[m][model]["mean"]) for model in models])
+        Mmax = max([abs(correlations[m][model]["max"]) for model in models])
 
         # If any of the three is nan, place -inf
         if np.isnan(mmax) or np.isnan(mmean) or np.isnan(Mmax):
@@ -421,7 +427,7 @@ def main():
         else:
             max_correlations.append((j, max([mmax, mmean, Mmax])))
 
-    max_correlations.append((j + 1, max([abs(correlations["mean_conf"][model]) for model in models.keys()])))
+    max_correlations.append((j + 1, max([abs(correlations["mean_conf"][model]) for model in models])))
     max_correlations = np.array(sorted(max_correlations, key=lambda x: x[1], reverse=True))
 
     # Plot max correlations
@@ -478,8 +484,12 @@ def main():
     print("Found", anomalies_test.sum(), "anomalies in the test set")
 
     # Create distance plots for each focus metric
+    n_models = len(models)
+    n_rows = 4
     for metric in focus_metrics:
-        fig, axs = plt.subplots(4, 4, figsize=(20, 20))
+        fig, axs = plt.subplots(n_rows, n_models, figsize=(5*n_models, 5*n_rows))
+        if n_models == 1:
+            axs = axs.reshape(-1, 1)
         axs = axs.flatten()
 
         c = 0
@@ -487,14 +497,14 @@ def main():
             pd.Series(all_stats[k]["distances"][metric]["max"][
                 pd.Series(all_stats[k]["distances"][metric]["max"]).apply(np.isfinite)
             ]).max(skipna=True)
-            for k in models.keys()
+            for k in models
         ])
 
         min_ = np.min([
             pd.Series(all_stats[k]["distances"][metric]["min"][
                 pd.Series(all_stats[k]["distances"][metric]["min"]).apply(np.isfinite)
             ]).min(skipna=True)
-            for k in models.keys()
+            for k in models
         ])
 
         data_range = max_ - min_
@@ -505,7 +515,7 @@ def main():
         print("max", max_, "min", min_, "max_ylim", max_ylim, "min_ylim", min_ylim)
 
         for name in ["Predict Proba"] + ["mean", "min", "max"]:
-            for k in models.keys():
+            for k in models:
                 create_plot_distances(
                     dictionary={
                         "mean": all_stats[k]["distances"][metric]["mean"],
@@ -526,6 +536,10 @@ def main():
                     anomalies_test=anomalies_test
                 )
                 c += 1
+
+        # Hide any unused subplots
+        for idx in range(c, len(axs)):
+            axs[idx].set_visible(False)
 
         date = time.strftime("%Y-%m-%d")
         plt.suptitle(
@@ -548,13 +562,15 @@ def main():
     # Plot distributions
     cumulative = False
     top_k = 3
-    fig, axs = plt.subplots(top_k + 1, 4, figsize=(20, 3 * top_k))
+    fig, axs = plt.subplots(top_k + 1, n_models, figsize=(5*n_models, 3*(top_k+1)))
+    if n_models == 1:
+        axs = axs.reshape(-1, 1)
     axs = axs.flatten()
 
     for i, metric in enumerate(focus_metrics[:top_k]):
         for name in ["mean", "min", "max"]:
-            for j, k in enumerate(models.keys()):
-                indx = 4 * i + j
+            for j, k in enumerate(models):
+                indx = n_models * i + j
                 # plot the distribution of the distances (calibration and test)
                 sns.kdeplot(
                     all_stats[k]["distances"][metric][name],
@@ -580,16 +596,16 @@ def main():
     for j, ax in enumerate(axs):
         ax.yaxis.set_ticks([])
         ax.yaxis.set_ticklabels([])
-        if j % 4 == 0 and j <= 4 * top_k:
+        if j % n_models == 0 and j <= n_models * top_k:
             ax.yaxis.set_ticks_position("left")
             ax.yaxis.set_label_position("left")
-            ax.set_ylabel(focus_metrics[j // 4], fontsize=15)
+            ax.set_ylabel(focus_metrics[j // n_models], fontsize=15)
             ax.yaxis.set_tick_params(labelsize=15)
         else:
             ax.set_ylabel("")
 
-    for indx, k in enumerate(models.keys()):
-        indx += 4 * top_k
+    for indx, k in enumerate(models):
+        indx += n_models * top_k
         sns.kdeplot(
             all_stats[k]["probabs"].max(axis=1),
             ax=axs[indx],
@@ -611,9 +627,13 @@ def main():
         # plot vertical lines at 0.5 and 1.0
         axs[indx].axvline(0.5, color="red", lw=1, ls='--')
         axs[indx].axvline(1.0, color="red", lw=1, ls='--')
-        if indx % 4 == 0:
+        if indx % n_models == 0:
             axs[indx].legend(loc="upper left")
             axs[indx].set_ylabel("Confidence", fontsize=15)
+
+    # Hide unused subplots
+    for idx in range(n_models * (top_k + 1), len(axs)):
+        axs[idx].set_visible(False)
 
     date = time.strftime("%Y-%m-%d")
     plt.suptitle(
