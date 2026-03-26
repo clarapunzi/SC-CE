@@ -21,6 +21,10 @@ name_dataset_command = {"German Credit": "\\german",
                         "Adult": "\\adult",
                         "Two Moons":"\\twomoons",
                         "Breast Cancer": "\\breastcancer",
+                        "toy_dataset":"\\twomoons",
+                        "german_credit":"\\german",
+                        "adult48k":"\\adult",
+                        "breast_cancer":"\\breastcancer"
                         }
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""

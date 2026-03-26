@@ -164,9 +164,9 @@ def initialize_rejectors(models, splits):
     """Initialize selective classifiers and metrics dictionaries"""
     # Target coverages
     target_coverages_n = 30
-    target_coverages = list(np.round(np.linspace(0.001, 1, target_coverages_n - 6)[::-1][1:],2))
+    target_coverages = list(np.round(np.linspace(0.5, 1, target_coverages_n - 6)[::-1][1:],2))
     target_coverages = sorted(list(set(target_coverages +
-                                [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.99]
+                                [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
                                         )), reverse=True)
     target_coverages_n = len(target_coverages)
     n = len(splits['X_test'])
@@ -177,21 +177,27 @@ def initialize_rejectors(models, splits):
     # Basic rejectors
     plug_in_rulers = {}
     selected_plg = {}
+    selected_plg_calibration = {}
     plug_in_rulers_auc = {}
     selected_plg_auc = {}
+    selected_plg_auc_calibration = {}
     # distance-based rejectors
     l2_rejectors_distances = {}
     selected_l2_rejectors_distances = {}
-    
+    selected_l2_rejectors_distances_calibration = {}
+
     # tree based rejectors
     tree_rejectors = {}
     selected_tree_rejectors = {}
 
     # Dictionaries for metrics
-    rejected_by_coverage = {}
+    non_rejected_accuracy = {}
     classification_quality_dict = {}
     rejection_quality_dict = {}
-    included_samples = {}
+    coverage = {}
+    calibration_coverage = {}
+    rejection_rate_class_0 = {}
+    rejection_rate_class_1 = {}
     all_original_scores = {}
     
     # Initialize the selective classifiers
@@ -202,17 +208,23 @@ def initialize_rejectors(models, splits):
         all_original_scores[k] = accuracy_score(splits['y_test'], models[k].predict(splits['X_test']))
         
         # Result dictionaries
-        rejected_by_coverage[k] = {}
+        non_rejected_accuracy[k] = {}
         classification_quality_dict[k] = {}
         rejection_quality_dict[k] = {}
-        included_samples[k] = {}
-        
+        coverage[k] = {}
+        calibration_coverage[k] = {}
+        rejection_rate_class_0[k] = {}
+        rejection_rate_class_1[k] = {}
+
         # Initialize for basic methods
         for selective_c in ["PlugInRule", "PlugInRuleAUC"]:
-            rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
+            non_rejected_accuracy[k][selective_c] = np.zeros(target_coverages_n)
             classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
             rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
-            included_samples[k][selective_c] = np.zeros(target_coverages_n)
+            coverage[k][selective_c] = np.zeros(target_coverages_n)
+            calibration_coverage[k][selective_c] = np.zeros(target_coverages_n)
+            rejection_rate_class_0[k][selective_c] = np.zeros(target_coverages_n)
+            rejection_rate_class_1[k][selective_c] = np.zeros(target_coverages_n)
     
     # Initialize for distance-based rejectors
     for k in models.keys():
@@ -228,10 +240,13 @@ def initialize_rejectors(models, splits):
                     )
                     
                     # Initialize result dictionaries for this rejector
-                    rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    non_rejected_accuracy[k][selective_c] = np.zeros(target_coverages_n)
                     classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
                     rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
-                    included_samples[k][selective_c] = np.zeros(target_coverages_n)
+                    coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    calibration_coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    rejection_rate_class_0[k][selective_c] = np.zeros(target_coverages_n)
+                    rejection_rate_class_1[k][selective_c] = np.zeros(target_coverages_n)
 
                     # Initialize for tree-based rejectors
                     # selective_c = "CFTreeRejector_" + metric + "_" + m_type + ("_gamma" if gamma_flag else "")
@@ -240,27 +255,33 @@ def initialize_rejectors(models, splits):
                     #     coverages=target_coverages
                     # )
                     # Initialize result dictionaries for this rejector
-                    # rejected_by_coverage[k][selective_c] = np.zeros(target_coverages_n)
+                    # non_rejected_accuracy[k][selective_c] = np.zeros(target_coverages_n)
                     # classification_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
                     # rejection_quality_dict[k][selective_c] = np.zeros(target_coverages_n)
-                    # included_samples[k][selective_c] = np.zeros(target_coverages_n)
+                    # coverage[k][selective_c] = np.zeros(target_coverages_n)
                     
     
     # Group metric dictionaries
     metric_dicts = {
-        "rejected_by_coverage": rejected_by_coverage,
+        "non_rejected_accuracy": non_rejected_accuracy,
         "classification_quality_dict": classification_quality_dict,
         "rejection_quality_dict": rejection_quality_dict,
-        "included_samples": included_samples
+        "coverage": coverage,
+        "calibration_coverage": calibration_coverage,
+        "rejection_rate_class_0": rejection_rate_class_0,
+        "rejection_rate_class_1": rejection_rate_class_1
     }
     
     rejectors = {
         "plug_in_rulers": plug_in_rulers,
         "selected_plg": selected_plg,
+        "selected_plg_calibration": selected_plg_calibration,
         "plug_in_rulers_auc": plug_in_rulers_auc,
         "selected_plg_auc": selected_plg_auc,
+        "selected_plg_auc_calibration": selected_plg_auc_calibration,
         "l2_rejectors_distances": l2_rejectors_distances,
         "selected_l2_rejectors_distances": selected_l2_rejectors_distances,
+        "selected_l2_rejectors_distances_calibration": selected_l2_rejectors_distances_calibration,
         "tree_rejectors": tree_rejectors,
         "selected_tree_rejectors": selected_tree_rejectors
     }
@@ -289,7 +310,8 @@ def calibrate_basic_rejectors(models, rejectors, splits, all_stats, all_stats_te
         plug_in_rule = rejectors["plug_in_rulers"][k]
         plug_in_rule.calibrate(splits["X_calibration"], target_coverages=target_coverages)
         rejectors["selected_plg"][k] = plug_in_rule.qband(splits["X_test"])
-        
+        rejectors["selected_plg_calibration"][k] = plug_in_rule.qband(splits["X_calibration"])
+
         # Calibrate PlugInRuleAUC
         plug_in_ruler_auc = rejectors["plug_in_rulers_auc"][k]
         plug_in_ruler_auc.calibrate(
@@ -298,6 +320,7 @@ def calibrate_basic_rejectors(models, rejectors, splits, all_stats, all_stats_te
             target_coverages=target_coverages
         )
         rejectors["selected_plg_auc"][k] = rejectors["plug_in_rulers_auc"][k].qband(splits["X_test"])
+        rejectors["selected_plg_auc_calibration"][k] = rejectors["plug_in_rulers_auc"][k].qband(splits["X_calibration"])
         
         print("Basic rejectors calibrated:")
         print(f"PlugInRule: {rejectors['selected_plg'][k][:5]}")
@@ -315,6 +338,7 @@ def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats
     
     for k in tqdm(models.keys(), desc="Calibrating distance-based rejectors"):
         rejectors["selected_l2_rejectors_distances"][k] = {}
+        rejectors["selected_l2_rejectors_distances_calibration"][k] = {}
         if calibrate_trees:
             rejectors["selected_tree_rejectors"][k] = {}
         
@@ -331,18 +355,26 @@ def calibrate_distance_rejectors(models, rejectors, splits, all_stats, all_stats
                     splits["X_test"],
                     all_stats_test[k]["distances"][metric][m_type]
                     )
-                
+                rejectors["selected_l2_rejectors_distances_calibration"][k][selective_c] = l2_rejector_dist.qband(
+                    splits["X_calibration"],
+                    all_stats[k]["distances"][metric][m_type]
+                    )
+
                 # Gamma rejector
                 selective_c_gamma = f"CFDistRejector_{metric}_{m_type}_gamma"
                 l2_rejector_dist_gamma = rejectors["l2_rejectors_distances"][k][selective_c_gamma]
                 l2_rejector_dist_gamma.calibrate(
-                    splits["X_calibration"], 
+                    splits["X_calibration"],
                     all_stats[k]["distances"][metric][m_type],
                     use_gamma=True
                 )
                 rejectors["selected_l2_rejectors_distances"][k][selective_c_gamma] = l2_rejector_dist_gamma.qband(
                     splits["X_test"],
                     all_stats_test[k]["distances"][metric][m_type]
+                    )
+                rejectors["selected_l2_rejectors_distances_calibration"][k][selective_c_gamma] = l2_rejector_dist_gamma.qband(
+                    splits["X_calibration"],
+                    all_stats[k]["distances"][metric][m_type]
                     )
                 
                 if calibrate_trees:
@@ -386,18 +418,21 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info, calibrate_
         basic_rejectors = {
             "PlugInRule": {
                 "selected_data": rejectors["selected_plg"][k],
+                "selected_data_calibration": rejectors["selected_plg_calibration"][k],
                 "rejector": rejectors["plug_in_rulers"][k]
             },
             "PlugInRuleAUC": {
                 "selected_data": rejectors["selected_plg_auc"][k],
+                "selected_data_calibration": rejectors["selected_plg_auc_calibration"][k],
                 "rejector": rejectors["plug_in_rulers_auc"][k]
             }
         }
-        
+
         for selective_k, data in basic_rejectors.items():
             compute_selective_metrics(
                 model_key=k,
                 selected_data=data["selected_data"],
+                selected_data_calibration=data["selected_data_calibration"],
                 classifier_type=selective_k,
                 selective_classifier=data["rejector"],
                 splits=splits,
@@ -405,12 +440,13 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info, calibrate_
                 n=n,
                 metric_dicts=metric_dicts
             )
-        
+
         # Evaluate distance-based rejectors
         for selective_c, selected_data in rejectors["selected_l2_rejectors_distances"][k].items():
             compute_selective_metrics(
                 model_key=k,
                 selected_data=selected_data,
+                selected_data_calibration=rejectors["selected_l2_rejectors_distances_calibration"][k][selective_c],
                 classifier_type=selective_c,
                 selective_classifier=rejectors["l2_rejectors_distances"][k][selective_c],
                 splits=splits,
@@ -436,7 +472,7 @@ def evaluate_rejectors(models, rejectors, splits, metric_dicts, info, calibrate_
 
 
 def create_dataframes(models, metric_dicts, info,
-                      selective_metric="rejected_by_coverage"):
+                      selective_metric="non_rejected_accuracy"):
     """Create DataFrames for visualization"""
     target_coverages = info["target_coverages"]
     
@@ -450,6 +486,14 @@ def create_dataframes(models, metric_dicts, info,
         dataframes[k] = df
     
     return dataframes
+def fancy_generator(method):
+    if "latent" in method.lower() and "ils" in method.lower():
+            return r"ILS$_L$"
+    if "growing" in method.lower():
+            return "GS"
+    if "dice" in method.lower():
+        return "DiCE"
+    return method.upper()
 
 def fancy_names(name):
     """Return a cooler name for the selective classifier"""
@@ -474,25 +518,21 @@ def fancy_names(name):
         
         if name.split("_")[1] == "CFDistRejector":
             tree = ""
-        elif name.split("_")[1] == "CFTreeRejector":
-            tree = " (Tree)"
+        else:
+            print(name,"!!!!!"*10, "is not a CFDistRejector, check the fancy_names function")
+            tree= ""
         distr = name.split("_")[-1]
         if distr == "mean":
-            distr = "_{mean}"
+            distr = "_{avg}"
         elif distr == "min":
             distr = "_{min}"
         elif distr == "max":
             distr = "_{max}"
         method = name.split("_")[0]
 
-        if method == "ils<latent":
-            method = "ILS$_{latent}$"
-        elif "GROWING" in method.upper():
-            method = "GS"
-        else:
-            method = method.upper()
+        method = fancy_generator(method)
         distance = name.split("_")[2]
-        if "GROWING" in method:
+        if "growing" in method.lower():
             print(name, distance, method)
         newn= method+tree+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
         # print(name,newn)
@@ -620,7 +660,7 @@ def simplified_plot_styling(method_name):
     method_name = method_name.lower()
     # Set defaults
     style['ls'] = '-'
-    style['marker'] = 'o'
+    style['marker'] = ''
     style['color'] = 'blue'
     style['linewidth'] = 1
     style['markersize'] = 8
@@ -656,7 +696,7 @@ def simplified_plot_styling(method_name):
         style['linewidth']= 2.5
         style["ls"] = ':'
     if 'max' in method_name:
-        style['linewidth']= 2
+        style['linewidth']= 3
 
     # Check for metrics in the method name
     for metric, color in metrics_colors.items():
@@ -683,13 +723,10 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
                 linewidth=style['linewidth'],
                 markersize=style['markersize'],
                 )
-    if selective == "rejected_by_coverage":
-
+    if selective == "non_rejected_accuracy":
         ax.axhline(all_original_scores[model_name], label=f"Original {model_name}", color='k', ls='--')
-    # only the target coverages that are multiples of 0.05 plus the 0.99
     target_coverages = target_coverages.copy()
-    target_coverages = np.array(target_coverages)[((np.array(target_coverages)*100)%5==0)]
-    target_coverages = np.concatenate([[0.99], target_coverages])
+    target_coverages = np.array(target_coverages)[((np.array(target_coverages)*100)%10==0)]
     
     ax.set_xticks(target_coverages)
     ax.set_xticklabels([f"{e*100:.0f}%" for e in target_coverages], rotation=0,
@@ -704,12 +741,20 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
     else:
         ax.set_ylim(0, 1)
     if indx == 0:
-        if selective == "rejected_by_coverage":
+        if selective == "non_rejected_accuracy":
             ylab = "Non-rejected Accuracy"
         elif selective == "rejection_quality_dict":
             ylab = "Rejection Quality"
         elif selective == "classification_quality_dict":
             ylab = "Classification Quality"
+        elif selective == "selective_accuracy":
+            ylab = "Selective Accuracy"
+        elif selective == "coverage":
+            ylab = "Coverage"
+        elif selective == "rejection_rate_class_0":
+            ylab = "Rejection Rate (Class 0)"
+        elif selective == "rejection_rate_class_1":
+            ylab = "Rejection Rate (Class 1)"
         ax.set_ylabel(ylab, fontsize=24)
     if indx == 3:
         # place the yticklabels on the right
@@ -724,9 +769,9 @@ def plot_line_graph_nb(ax, df, top_policies, top_policies_names,
     ax.grid(True,alpha=0.6)
 
 
-def create_legend_file(top_policies_names, model_name,dt_name):
+def create_legend_file(top_policies_names, model_name,legend_fig_name):
     """Create a standalone legend file with metrics-based coloring."""
-    fig, ax = plt.subplots(figsize=(12, 3))
+    fig, ax = plt.subplots(figsize=(8, 3))
     ax.set_axis_off()  # Hide the axes
     print(top_policies_names)
     
@@ -734,6 +779,7 @@ def create_legend_file(top_policies_names, model_name,dt_name):
     metric_methods = top_policies_names
     # place pluginrule and pluginruleauc at the beginning
     metric_methods = ["PlugInRule", "PlugInRuleAUC", "Original Black Box"] + [e for e in metric_methods if e not in ["PlugInRule", "PlugInRuleAUC", "Original Black Box"]] 
+    ax.plot([], [], label=f"Original {model_name}", color='k', ls='--')
     for name in metric_methods:
         style = simplified_plot_styling(name)
         label = name
@@ -744,18 +790,18 @@ def create_legend_file(top_policies_names, model_name,dt_name):
                     color=style['color'],
                     linewidth=style['linewidth'],
                     markersize=style['markersize'])
-    ax.plot([], [], label=f"Original {model_name}", color='k', ls='--')
     
     # Create the legend with multiple columns
-    legend = ax.legend(loc='center', ncol=5, frameon=False, fontsize=18, 
+    legend = ax.legend(loc='center', ncol=4, frameon=False, fontsize=18, 
                       handlelength=2, handletextpad=0.5)
     # Save just the legend
-    fig.savefig(f"results/legend_metrics_{dt_name}.pdf", bbox_inches='tight')
+    fig.savefig(f"{legend_fig_name}", bbox_inches='tight')
     #plt.close(fig)
-fancy_model = {"mlp": "mlp",
-               "random_forest": "RF",
-               'xgboost': 'xgboost',
-               'lgbm': 'LGBM'}
+fancy_model = {"mlp": "MLP",
+               "random_forest": "Random Forest",
+               'xgboost': 'XGBoost',
+               'lgbm': 'LGBM',
+               'lip_mlp': 'LIP MLP'}
 def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       fig_name="alternative_selective_classifiers",
                       show =False,
@@ -764,10 +810,9 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       ):
     
     target_coverages = info["target_coverages"]
-    target_coverages_n = info["target_coverages_n"]
     all_original_scores = info["all_original_scores"]
 
-    if selective == "rejected_by_coverage":
+    if selective == "non_rejected_accuracy":
         
         minimum = np.array([all_original_scores[k] for k in all_original_scores.keys()]).min()
         vmax =    0
@@ -775,12 +820,12 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
 
             # Get indices of top performing methods by sum across coverages
 
-            fake_auc = dataframes[k].copy().values[:,:target_coverages_n//2].sum(axis=1)
+            fake_auc = dataframes[k].copy().values[:,:].sum(axis=1)
             # sort the fake_auc
             fake_auc = fake_auc.argsort()[::-1]
             # take the top_k rows
             fake_auc = fake_auc[:top_k]
-            vmax = max(vmax, dataframes[k].values[fake_auc, :target_coverages_n//2].max())
+            vmax = max(vmax, dataframes[k].values[fake_auc, :].max())
         minimum-=0.007
         vmax+=0.007
     else:
@@ -790,14 +835,14 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
     print("minimum",minimum)
     # create the latex tables
     latex_tables = {k:"" for k in models.keys()}
-    big_tables =   {k:"" for k in models.keys()}
+    # big_tables =   {k:"" for k in models.keys()}
     # use the fancy bar from tqdm
-    fig, ax = plt.subplots(1, 4, figsize=(7*4, 7))
+    fig, ax = plt.subplots(1, len(models), figsize=(7*len(models), 7))
     ax = ax.flatten()
     plotted_methods = []
     for indx,k in enumerate(tqdm(models.keys(), desc="Visualizing results")):
         # Select top performing methods
-        df = dataframes[k].copy().iloc[:, :target_coverages_n//2]
+        df = dataframes[k].copy().iloc[:, :]
         
         # it could happen that there is no difference between the methods (some rows are the same and differ only by the index)
         # so we need to drop the duplicates and modify the index of the duplicated rows that are kept by adding a suffix "_duplicate"
@@ -851,9 +896,9 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         top_policies = [0, 1] + [e for e in top_policies if e not in [0, 1]]
         top_policies_names = [fancy_names(fnam) for fnam in df.index[top_policies]]       
         plotted_methods += [fancy_names(fnam) for fnam in df.index[top_policies] if fnam not in plotted_methods]
-        column_values = np.concatenate([[0.99],
-                                        np.array(target_coverages[:target_coverages_n//2])[((
-                                            np.array(target_coverages[:target_coverages_n//2])*100)%5==0)]
+        column_values = np.concatenate([[0.95],
+                                        np.array(target_coverages[:])[((
+                                            np.array(target_coverages[:])*100)%10==0)]
                                         ])
         custom_cmap = 'inferno'
         custom_cmap = 'Greys_r'
@@ -882,20 +927,20 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         # )
         # Save figure
         # Create LaTeX table
-        big_tables[k] = generate_latex_table(ldf=df,
-                                           black_box_score=all_original_scores[k],
-                                           black_box_name=k,
-                                top_policies= list(fake_auc),
-                                top_policies_names=[fancy_names(fnam) for fnam in df.index[fake_auc]],
-                                target_coverages=column_values,
-                                dataset_name=name_dataset,
-                                sorted_rows = list(df.index[fake_auc]),
-                                print_heaedr=(indx==0),
-                                print_footer=(indx==len(models.keys())-1),
-                                cmap =custom_cmap,
-                                vmax=vmax,
-                                minimum=minimum
-                                )
+        # big_tables[k] = generate_latex_table(ldf=df,
+        #                                    black_box_score=all_original_scores[k],
+        #                                    black_box_name=k,
+        #                         top_policies= list(fake_auc),
+        #                         top_policies_names=[fancy_names(fnam) for fnam in df.index[fake_auc]],
+        #                         target_coverages=column_values,
+        #                         dataset_name=name_dataset,
+        #                         sorted_rows = list(df.index[fake_auc]),
+        #                         print_heaedr=(indx==0),
+        #                         print_footer=(indx==len(models.keys())-1),
+        #                         cmap =custom_cmap,
+        #                         vmax=vmax,
+        #                         minimum=minimum
+        #                         )
         latex_tables[k] = generate_latex_table(ldf=df.loc[:,(column_values).tolist()],
                                             black_box_score=all_original_scores[k],
                                             black_box_name=k,
@@ -925,27 +970,260 @@ def visualise_results(models, dataframes, info, name_dataset, plot_dir,
         plt.savefig(fig_path.replace(".pdf", ".png"))
         plt.close(fig)
     # the legend
-    create_legend_file(plotted_methods, "Black Box", name_dataset.replace(" ","_")+"_"+selective)
+    create_legend_file(plotted_methods, "Black Box", fig_path.replace(".pdf", "_legend.pdf"))
 
     # make sure the tables directory exists
     table_name = "latex_table_"+selective+"_"+ name_dataset.replace(" ","_")+".tex"
     path = os.path.join("results","tables")
     os.makedirs(path, exist_ok=True)
     # save the latex tables
-    with open(os.path.join(path, "BIG_"+table_name), "w") as f:
-        for k in models.keys():
-            #print(latex_tables[k])
-            f.write(big_tables[k])
+    # with open(os.path.join(path, "BIG_"+table_name), "w") as f:
+    #     for k in models.keys():
+    #         #print(latex_tables[k])
+    #         f.write(big_tables[k])
     with open(os.path.join(path, table_name), "w") as f:
         for k in models.keys():
-            #print(big_tables[k])
             f.write(latex_tables[k])
 
     return
-    
+
+
+def visualise_results_by_rejector(models, dataframes, info, name_dataset, plot_dir,
+                                 fig_name="rejectors_across_models",
+                                 show=False,
+                                 top_k=5,
+                                 selective='rejection_quality_dict',
+                                 cf_methods=None,
+                                 ):
+    """
+    Visualize results as a grid: rows=models, columns=CF generators.
+    Within each cell, the top-k distance metrics for that (model, CF generator) are plotted,
+    with baselines (PlugInRule, PlugInRuleAUC) always shown for reference.
+    Since baselines are constant within each row, visual differences across columns
+    reveal the effect of each CF generator.
+    """
+    if cf_methods is None:
+        cf_methods = ["growingspheres", "ils", "ils<latent", "lore"]
+
+    target_coverages = info["target_coverages"]
+    all_original_scores = info["all_original_scores"]
+
+    column_values = np.array(target_coverages)[
+        ((np.array(target_coverages) * 100) % 10 == 0)
+    ]
+
+    n_models = len(models)
+    n_cf = len(cf_methods)
+
+    fig, axes = plt.subplots(n_models, n_cf, figsize=(n_cf * 4, n_models * 4), sharey='row')
+    if n_models == 1:
+        axes = axes.reshape(1, -1)
+    if n_cf == 1:
+        axes = axes.reshape(-1, 1)
+
+    for row_idx, model_key in enumerate(models.keys()):
+        df = dataframes[model_key].copy()
+        y_min = all_original_scores[model_key] - 0.025
+        y_max = 1.025
+
+        # Baseline rows - constant across all columns in this row
+        baselines = {name: df.loc[name] for name in ["PlugInRule", "PlugInRuleAUC"] if name in df.index}
+
+        for col_idx, cf_method in enumerate(cf_methods):
+            ax_curr = axes[row_idx, col_idx]
+
+            # Filter rows belonging to this CF generator
+            cf_rows = [idx for idx in df.index if idx.startswith(cf_method + "_")]
+            if not cf_rows:
+                ax_curr.set_visible(False)
+                continue
+
+            cf_df = df.loc[cf_rows]
+
+            # Select top-k by sum across all coverages
+            scores = cf_df.values.sum(axis=1)
+            top_idx = scores.argsort()[::-1][:top_k]
+
+            ax_curr.axhline(all_original_scores[model_key], color='k', ls=':', alpha=0.8, label='Original score')
+            for i in top_idx:
+                row_name = cf_df.index[i]
+                style = simplified_plot_styling(row_name)
+                full_label = fancy_names(row_name)
+                # Strip CF method prefix (already shown as column title)
+                short_label = full_label.split(" - ", 1)[-1] if " - " in full_label else full_label
+                ax_curr.plot(cf_df.columns, cf_df.iloc[i],
+                             label=short_label,
+                             ls=style['ls'], marker=style['marker'],
+                             color=style['color'], linewidth=style['linewidth'],
+                             markersize=style['markersize'])
+
+            # Always plot baselines
+            for bname, bvals in baselines.items():
+                bstyle = simplified_plot_styling(bname)
+                ax_curr.plot(df.columns, bvals,
+                             label=bname,
+                             ls=bstyle['ls'], marker=bstyle['marker'],
+                             color=bstyle['color'], linewidth=bstyle['linewidth'],
+                             markersize=bstyle['markersize'])
+
+
+            # Axis formatting
+            ax_curr.set_xticks(column_values)
+            ax_curr.set_xticklabels([f"{e*100:.0f}%" for e in column_values], fontsize=9)
+            ax_curr.invert_xaxis()
+            ax_curr.set_ylim(y_min, y_max)
+            ax_curr.grid(True, alpha=0.4)
+
+            if row_idx == 0:
+                ax_curr.set_title(fancy_generator(cf_method), fontsize=12, fontweight='bold')
+            if col_idx == 0:
+                ax_curr.set_ylabel(fancy_model[model_key], fontsize=12, fontweight='bold')
+            if row_idx == n_models - 1:
+                ax_curr.set_xlabel("Target Coverage", fontsize=10)
+
+    plt.suptitle(f"{name_dataset} - {selective.replace('_', ' ').replace('dict','')}", fontsize=14, fontweight='bold')
+
+    # Shared legend: baselines first, then CF metric lines (unique labels only)
+    _priority = {"Original score", "PlugInRule", "PlugInRuleAUC"}
+    baseline_labels, cf_labels = {}, {}
+    for ax_row in axes:
+        for ax_ in ax_row:
+            if ax_.get_visible():
+                for h, lbl in zip(*ax_.get_legend_handles_labels()):
+                    if lbl in _priority and lbl not in baseline_labels:
+                        baseline_labels[lbl] = h
+                    elif lbl not in _priority and lbl not in cf_labels:
+                        cf_labels[lbl] = h
+    all_legend = {**baseline_labels, **cf_labels}
+    if all_legend:
+        fig.legend(all_legend.values(), all_legend.keys(),
+                   loc='lower center', ncol=7,
+                   fontsize=11, frameon=False, bbox_to_anchor=(0.5, -0.05))
+
+    plt.tight_layout(rect=[0, 0.06, 1, 1])
+
+    fig_path = os.path.join(plot_dir, f"{fig_name}_{selective}.pdf")
+    if show:
+        plt.show()
+        plt.close(fig)
+    else:
+        os.makedirs(plot_dir, exist_ok=True)
+        plt.savefig(fig_path, bbox_inches='tight', dpi=150)
+        print(f"Saved figure to {fig_path}")
+        plt.savefig(fig_path.replace(".pdf", ".png"), bbox_inches='tight', dpi=150)
+        plt.close(fig)
+
+def visualise_fairness_metrics(models, metric_dicts_class_0, metric_dicts_class_1, info,
+                                name_dataset, plot_dir, fig_name="fairness_analysis"):
+    """
+    Visualize per-class rejection rates to identify fairness issues.
+
+    Shows rejection rates for class 0 and class 1 side-by-side for each model,
+    making it easy to spot when rejection is biased toward one class.
+
+    Args:
+        models: Dict of models
+        metric_dicts_class_0: rejection_rate_class_0 from metric_dicts
+        metric_dicts_class_1: rejection_rate_class_1 from metric_dicts
+        info: Info dict with target_coverages
+        name_dataset: Dataset name for title
+        plot_dir: Directory to save plots
+        fig_name: Base name for output files
+    """
+    target_coverages = info["target_coverages"]
+
+    # Create figure: 2 columns (class 0, class 1) x N models rows
+    n_models = len(models)
+    fig, axes = plt.subplots(n_models, 2, figsize=(14, 5*n_models))
+    if n_models == 1:
+        axes = axes.reshape(1, -1)
+
+    class_names = ["Class 0", "Class 1"]
+    metric_data = [metric_dicts_class_0, metric_dicts_class_1]
+
+    for row_idx, model_key in enumerate(models.keys()):
+        for col_idx, (class_name, metrics_dict) in enumerate(zip(class_names, metric_data)):
+            ax = axes[row_idx, col_idx]
+
+            # Plot all rejectors for this model and class
+            if model_key in metrics_dict:
+                methods_dict = metrics_dict[model_key]
+
+                # Get max values for consistent y-axis
+                max_val = 0
+                for method_name, rates in methods_dict.items():
+                    max_val = max(max_val, np.max(rates[:]))
+
+                # Plot each rejector - use ALL coverage values like plot_line_graph_nb does
+                coverage_indices = np.array(target_coverages[:])
+
+                for method_name, rates in methods_dict.items():
+                    style = simplified_plot_styling(method_name)
+                    ax.plot(coverage_indices, rates[:],
+                           label=fancy_names(method_name),
+                           ls=style['ls'],
+                           marker=style['marker'],
+                           color=style['color'],
+                           linewidth=style['linewidth'],
+                           markersize=style['markersize'])
+
+            # Formatting
+            ax.set_xlabel("Target Coverage", fontsize=12)
+            ax.set_ylabel("Rejection Rate", fontsize=12)
+            if row_idx == 0:
+                ax.set_title(f"{class_name}", fontsize=14, fontweight='bold')
+
+            # Left column: show model name
+            if col_idx == 0:
+                ax.text(-0.25, 0.5, fancy_model[model_key],
+                       transform=ax.transAxes, fontsize=14, fontweight='bold',
+                       ha='right', va='center', rotation=90)
+
+            ax.set_ylim(0, min(1.0, max_val * 1.1))
+            ax.grid(True, alpha=0.3)
+
+            # Format x-axis: plot all points, but only show ticks at multiples of 0.05
+            # This follows the same pattern as plot_line_graph_nb
+            target_cov_copy = np.array(target_coverages[:]).copy()
+            tick_indices = target_cov_copy[((target_cov_copy*100)%10==0)]
+
+            ax.set_xticks(tick_indices)
+            ax.set_xticklabels([f"{e*100:.0f}%" for e in tick_indices], fontsize=10)
+
+    # Add legend
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    if handles:
+        fig.legend(handles, labels, loc='upper center', ncol=5,
+                  bbox_to_anchor=(0.5, -0.01), fontsize=11, frameon=False)
+
+    plt.suptitle(f"Fairness Analysis: Rejection Rates by Class - {name_dataset}",
+                fontsize=16, fontweight='bold', y=0.995)
+    plt.tight_layout(rect=[0, 0.02, 1, 0.99])
+    # change the xlim to be decreasing
+    for ax_row in axes:
+        for ax in ax_row:
+            ax.invert_xaxis()
+            
+    # Save both formats
+    pdf_path = os.path.join(plot_dir, f"{fig_name}.pdf")
+    png_path = os.path.join(plot_dir, f"{fig_name}.png")
+    plt.savefig(pdf_path, format='pdf', bbox_inches='tight', dpi=100)
+    plt.savefig(png_path, format='png', bbox_inches='tight', dpi=100)
+    print(f"Saved fairness visualization: {pdf_path}, {png_path}")
+    plt.close()
+
 
 def main():
-    """Main function - orchestrates the overall workflow"""
+    # --- SELECTED REJECTORS (second-pass filter) ---
+    # Leave empty [] for first-pass (all rejectors used, top-k selected naively).
+    # After statistical analysis, populate with the best combinations, e.g.:
+    #   ["growingspheres_CFDistRejector_l2_average",
+    #    "ils_CFDistRejector_cosine_average",
+    #    "lore_CFDistRejector_l2_min"]
+    # When non-empty, only these rejectors (plus PlugInRule/PlugInRuleAUC) are kept.
+    SELECTED_REJECTORS = []
+    # -----------------------------------------------
+
     # Parse command line arguments
     args = parse_arguments()
     
@@ -962,15 +1240,20 @@ def main():
     
     # Load or train models
     models = load_or_train_models(config, splits, args.dataset)
+    # Exclude LGBM and enforce model order matching the paper tables
+    model_order = ['mlp', 'lip_mlp', 'random_forest', 'xgboost']
+    models = {k: models[k] for k in model_order if k in models}
     print(name_dataset_command)
     print("processing dataset",name_dataset_command[fancy_dataset_names[args.dataset]])
     all_all_dataframes = {m:{} for m in [
                                     "rejection_quality_dict",
                                     "classification_quality_dict",
-                                    "rejected_by_coverage"
+                                    "non_rejected_accuracy",
+                                    "coverage",
+                                    "calibration_coverage"
     ]}
     # Load distance statistics for the cf_methods 
-    for cf_method in ["growingspheres","ils","ils_latent","lore","dice"]:
+    for cf_method in ["growingspheres","ils","ils_latent","lore"]:#,"dice"]:
         if cf_method == "ils_latent":
             args.latent = True
             cf_method = "ils"
@@ -1002,13 +1285,15 @@ def main():
         for jjjjj,selective in enumerate([
             "rejection_quality_dict",
             "classification_quality_dict",
-            "rejected_by_coverage"
+            "non_rejected_accuracy",
+            "coverage",
+            "calibration_coverage"
             ]):
             dataframes_ = create_dataframes(models,metric_dicts, info,
                                             selective_metric=selective)
             # Create dataframes for visualization
             # dataframes = create_dataframes(models, metric_dicts, info,
-            #                             selective_metric="rejected_by_coverage")
+            #                             selective_metric="non_rejected_accuracy")
             
             print(type(dataframes_["mlp"]), dataframes_["mlp"].columns)
             # dataframes is a dict of dataframes, the key is the model, the value the dataframe
@@ -1025,33 +1310,71 @@ def main():
                     # drop the raws relatively to the PlugInRule and PlugInRuleAUC
                     dataframes_[km] = dataframes_[km].drop(["PlugInRule", "PlugInRuleAUC"], axis=0)
                     all_all_dataframes[selective][km] = pd.concat([all_all_dataframes[selective][km], dataframes_[km]], axis=0)
-    # Visualize results using the all_dataframes
-    print("Visualizing results")
-    # now is different, because we have all the cf_methods, so we need to iterate over the dataset only
+    # Filter to selected rejectors if specified (second-pass mode)
+    if SELECTED_REJECTORS:
+        baselines = ["PlugInRule", "PlugInRuleAUC"]
+        for selective in all_all_dataframes:
+            for model_key in all_all_dataframes[selective]:
+                df = all_all_dataframes[selective][model_key]
+                keep = [r for r in df.index if r in SELECTED_REJECTORS or r in baselines]
+                all_all_dataframes[selective][model_key] = df.loc[keep]
+
     fig_name = f"selective_classifier_{args.dataset}_results"
     dataset_name = fancy_dataset_names[args.dataset]
-    for jjjjj,selective in enumerate([
-        "rejected_by_coverage",
-        "rejection_quality_dict",
-        "classification_quality_dict",
-        ]):
-        visualise_results(models, all_all_dataframes[selective],
-                           info, dataset_name,
-                            plot_dir,fig_name=fig_name,
-                            selective=selective)
-    # finally save the results in a pickle file, so that we can load them later,
-    # the file is a pickle. If there exist the file CONCAT_RESULTS.pkl, 
-    # it will be loaded and the new results will be updated (it is a huge dictionary, ù
-    # the first key is the dataset name, the value is the all_all_dataframes dict)
-    if not os.path.exists(f"general_results.pkl"):
-        already_computed = {args.dataset: all_all_dataframes}
-    else:
-        with open(f"general_results.pkl", "rb") as f:
-            already_computed = pickle.load(f)
-        already_computed[args.dataset] = all_all_dataframes
 
-    with open(f"general_results.pkl", "wb") as f:
-        pickle.dump(already_computed, f)
+    if SELECTED_REJECTORS:
+        # Second pass: generate plots only when a curated subset is selected
+        print("Visualizing results (second pass — selected rejectors)")
+        for jjjjj,selective in enumerate([
+            "non_rejected_accuracy",
+            "rejection_quality_dict",
+            "classification_quality_dict",
+            "coverage",
+            "calibration_coverage"
+            ]):
+            visualise_results(models, all_all_dataframes[selective],
+                               info, dataset_name,
+                                plot_dir,fig_name=fig_name,
+                                selective=selective)
+
+        print("\nGenerating alternative visualization layout (rejectors × models)...")
+        for jjjjj,selective in enumerate([
+            "non_rejected_accuracy",
+            #"rejection_quality_dict",
+            "classification_quality_dict",
+            "coverage"
+            "calibration_coverage"
+            ]):
+            visualise_results_by_rejector(models, all_all_dataframes[selective],
+                                         info, dataset_name,
+                                         plot_dir, fig_name=f"{fig_name}_by_rejector",
+                                         selective=selective)
+
+        # Generate fairness analysis plot: per-class rejection rates
+        print("\nGenerating fairness analysis (per-class rejection rates)...")
+        visualise_fairness_metrics(models,
+                                metric_dicts["rejection_rate_class_0"],
+                                metric_dicts["rejection_rate_class_1"],
+                                info, dataset_name, plot_dir,
+                                fig_name=f"{fig_name}_fairness")
+    
+    else:
+        print("Skipping plots, only saving general_results.pkl")
+
+    if len(SELECTED_REJECTORS)==0:
+        # finally save the results in a pickle file, so that we can load them later,
+        # the file is a pickle. If there exist the file CONCAT_RESULTS.pkl,
+        # it will be loaded and the new results will be updated (it is a huge dictionary, ù
+        # the first key is the dataset name, the value is the all_all_dataframes dict)
+        if not os.path.exists(f"general_results.pkl"):
+            already_computed = {args.dataset: all_all_dataframes}
+        else:
+            with open(f"general_results.pkl", "rb") as f:
+                already_computed = pickle.load(f)
+            already_computed[args.dataset] = all_all_dataframes
+
+        with open(f"general_results.pkl", "wb") as f:
+            pickle.dump(already_computed, f)
 
 if __name__ == "__main__":
     main()

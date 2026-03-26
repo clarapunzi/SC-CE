@@ -19,15 +19,8 @@ data/raw/*
 *.npz
 
 # For counterfactual generators
-# *lgbm.pkl
-# *mlp.pkl
-# *random_forest.pkl
-# *xgboost.pkl
-
 # the plots generated
 results/*
-
-
 
 # The counterfactuals generated: 
 # comment this to see what have you generated locally and upload eventually
@@ -66,7 +59,6 @@ oldresults_deleateable/*
 !counterfactuals/mlp/german_credit/*.npz
 !counterfactuals/mlp/breast_cancer/*.npz
 
-
 !counterfactuals/xgboost/adult48k/*.npz
 !counterfactuals/xgboost/german_credit/*.npz
 !counterfactuals/xgboost/toy_dataset/*.npz
@@ -84,4 +76,5 @@ oldresults_deleateable/*
 !counterfactuals/lgbm/breast_cancer
 
 
+SC-CE-paper/
 

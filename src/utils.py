@@ -123,6 +123,34 @@ def get_rejected_list(qband, i):
 
 from typing import Any, Dict
 from OLD_src.MyLoreSA.metrics import nonrejected_accuracy, classification_quality, rejection_quality, rejection_classification_report
+
+def compute_per_class_rejection_rates(y_test, rejected_list):
+    """
+    Compute the rejection rate for each class (binary classification).
+
+    For binary classification with classes 0 and 1, returns rejection rates
+    as a tuple (rejection_rate_class_0, rejection_rate_class_1).
+
+    Args:
+        y_test: 1D array of true class labels (assumes binary: 0, 1)
+        rejected_list: 1D binary array where 1 = rejected, 0 = accepted
+
+    Returns:
+        tuple: (rejection_rate_class_0, rejection_rate_class_1)
+    """
+    rates = {}
+    for class_label in [0, 1]:
+        class_mask = y_test == class_label
+        n_in_class = np.sum(class_mask)
+        n_rejected_in_class = np.sum(rejected_list[class_mask])
+
+        if n_in_class > 0:
+            rates[class_label] = n_rejected_in_class / n_in_class
+        else:
+            rates[class_label] = 0.0
+
+    return rates[0], rates[1]
+
 def compute_selective_metrics(model_key: str,
     selected_data: np.ndarray,
     classifier_type: str,
@@ -130,7 +158,8 @@ def compute_selective_metrics(model_key: str,
     splits: Dict,
     target_coverages: np.ndarray,
     n: int,
-    metric_dicts: Dict[str, Dict]):
+    metric_dicts: Dict[str, Dict],
+    selected_data_calibration: np.ndarray = None):
     '''
     This function calculates the selective metrics for a given model and selective technique
     model_key: the key of the model in the models dictionary
@@ -144,10 +173,17 @@ def compute_selective_metrics(model_key: str,
     '''
     # assume the selective classifier is fitted
     k = model_key
-    rejected_array = metric_dicts["rejected_by_coverage"][k][classifier_type]
+    non_rejected_acc_array = metric_dicts["non_rejected_accuracy"][k][classifier_type]
     classification_array = metric_dicts["classification_quality_dict"][k][classifier_type]
     rejection_array = metric_dicts["rejection_quality_dict"][k][classifier_type]
-    included_array = metric_dicts["included_samples"][k][classifier_type]
+    coverage_array = metric_dicts["coverage"][k][classifier_type]
+    calibration_coverage_array = metric_dicts["calibration_coverage"][k][classifier_type]
+    rejection_rate_class_0_array = metric_dicts["rejection_rate_class_0"][k][classifier_type]
+    rejection_rate_class_1_array = metric_dicts["rejection_rate_class_1"][k][classifier_type]
+
+    # Get y_test as array for per-class calculations
+    y_test_array = splits['y_test'].values.reshape(-1)
+
     for i,t_c in enumerate(target_coverages):
         #rejected list is a 0/1 list with 1 at rejected indices
         rejected_list = np.array(get_rejected_list(selected_data, i))
@@ -155,18 +191,24 @@ def compute_selective_metrics(model_key: str,
         correct_rejected,
         miscl_nonrejected,
         miscl_rejected,
-            df_plg) = rejection_classification_report(splits['y_test'].values.reshape(-1),
-                                                      selective_classifier.predict(splits['X_test']), 
+            df_plg) = rejection_classification_report(y_test_array,
+                                                      selective_classifier.predict(splits['X_test']),
                                                       rejected_list)
         acc_nrej = nonrejected_accuracy(correct_nonrejected, miscl_nonrejected)
         class_quality = classification_quality(correct_nonrejected, miscl_rejected, n)
         rej_quality = rejection_quality(correct_rejected, correct_nonrejected, miscl_rejected, miscl_nonrejected)
+        rej_rate_class_0, rej_rate_class_1 = compute_per_class_rejection_rates(y_test_array, rejected_list)
             #print(f"model {k}: non-rejected accuracy: {AN_plg:.2f}, {i}")
             #print(f"model {k}: classification quality: {CQ:.2f}, {i}")
             #print(f"model {k}: rejection quality: {RQ:.2f}, {i}")
 
-        rejected_array[i] = acc_nrej
+        non_rejected_acc_array[i] = acc_nrej
         classification_array[i] = class_quality
         rejection_array[i] = rej_quality
-        included_array[i] = np.sum(1-rejected_list)/len(rejected_list)
+        coverage_array[i] = np.sum(1-rejected_list)/len(rejected_list)
+        if selected_data_calibration is not None:
+            rejected_cal = np.array(get_rejected_list(selected_data_calibration, i))
+            calibration_coverage_array[i] = np.sum(1-rejected_cal)/len(rejected_cal)
+        rejection_rate_class_0_array[i] = rej_rate_class_0
+        rejection_rate_class_1_array[i] = rej_rate_class_1
 
