@@ -486,18 +486,27 @@ def create_dataframes(models, metric_dicts, info,
         dataframes[k] = df
     
     return dataframes
-def fancy_generator(method):
+def fancy_generator(method,command=False):
     if "latent" in method.lower() and "ils" in method.lower():
-            return r"ILS$_L$"
+        if command:
+            return "\\ilslatent"
+        return r"ILS$_L$"
     if "growing" in method.lower():
-            return "GS"
+        if command:
+            return "\\growingspheres"
+        return "GS"
     if "dice" in method.lower():
+        if command:
+            return "\\dice"
         return "DiCE"
+    if command:
+        return "\\"+method.lower()
     return method.upper()
 
-def fancy_names(name):
+def fancy_names(name,command=False):
     """Return a cooler name for the selective classifier"""
     name = name.replace("centered_l2", "centered L2").replace("centered_cosine", "centered cosine")
+    name = name.replace("l2", "L2").replace("mae", "MAE")
     if "PlugInRuleAUC" in name:
         return "PlugInRuleAUC"
     elif "PlugInRule" in name:
@@ -515,12 +524,6 @@ def fancy_names(name):
             name = name.replace("_gamma", "")
         else:
             apex = ""
-        
-        if name.split("_")[1] == "CFDistRejector":
-            tree = ""
-        else:
-            print(name,"!!!!!"*10, "is not a CFDistRejector, check the fancy_names function")
-            tree= ""
         distr = name.split("_")[-1]
         if distr == "mean":
             distr = "_{avg}"
@@ -530,11 +533,11 @@ def fancy_names(name):
             distr = "_{max}"
         method = name.split("_")[0]
 
-        method = fancy_generator(method)
+        method = fancy_generator(method,command=command)
         distance = name.split("_")[2]
         if "growing" in method.lower():
             print(name, distance, method)
-        newn= method+tree+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
+        newn = method+" - "+distance+"$"+apex+distr+"$" + duplicate_flag
         # print(name,newn)
         return newn
 
@@ -586,7 +589,8 @@ def generate_latex_table(ldf,
         table += "\\begin{table*}[t]\n\\centering\n\\resizebox{1\linewidth}{!}{\n\\begin{tabular}{c|c|l|" + "c|" * len(ldf.columns) + "}\n"
         # the header have the dataset name, the cf method, and the target coverages
         # table += "\\hline\n\\textbf{Dataset} & \\textbf{Black Box} & \\textbf{Rejection Policy} & " + " & ".join([f"{round(c, 2)}" for c in  ldf.columns]) + " \\\\\n\\hline\n"
-        table += "\\multirow{2}{*}{\\textbf{Dataset}} & \multirow{2}{*}{\\textbf{Black Box}} & \multirow{2}{*}{\\textbf{Rejection Policy}} & \multicolumn{9}{c|}{Target Coverages}\\\\\n\cline{4-"+str(3+ len(ldf.columns))+"}\n"
+        table += "\\multirow{2}{*}{\\textbf{Dataset}} & \\multirow{2}{*}{\\textbf{Black Box}} & \\multirow{2}{*}{\\textbf{Rejection Policy}} & \\multicolumn{" + str(len(ldf.columns)) + "}{c|}{Target Coverages}\\\\\n\\cline{4-"+str(3+ len(ldf.columns))+"}\n"
+        table += "& & & " + " & ".join([f"{round(c*100):.0f}\\%" for c in ldf.columns]) + " \\\\\n\\hline\n"
         # the name of the dataset is written vertically and taks as many lines as the number of the top policies
         table += "\\multirow{" + str(len(top_policies)*num_models) + "}{*}{\\rotatebox[origin=c]{90}{\\textbf{" + name_dataset_command[dataset_name] + "}}}"
     else: # the header is already been printed so we just add a \cline
@@ -616,7 +620,8 @@ def generate_latex_table(ldf,
         table += row
         # print([(str(np.round(v,3))+"_"+str(np.round(best_vals_by_col[jj],3)) if abs(v-best_vals_by_col[jj])>0.0001 else "MAX_"+str(v)+"_MAX" ) for jj,v in enumerate(ldf.values[idx]) ])
     if print_footer:
-        table += "\\hline\n\\end{tabular}\n}\n\\caption{Top Selective Classifiers for the dataset \\"+name_dataset_command[dataset_name] + "}\n\\end{table*}"
+        table += "\\hline\n\\end{tabular}\n}\n\\caption{Top Selective Classifiers for the dataset "
+        table += name_dataset_command[dataset_name] + "}\n\\end{table*}"
     else:
         table += ''
     # print("Generated LaTeX Table:\n", table)

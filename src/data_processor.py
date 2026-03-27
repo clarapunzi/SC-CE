@@ -26,6 +26,13 @@ name_dataset_command = {"German Credit": "\\german",
                         "adult48k":"\\adult",
                         "breast_cancer":"\\breastcancer"
                         }
+cf_generator_command = {"dice":"\\dice",
+                        "ils":"\\ils",
+                        "lore":"\\lore",
+                        "growing_spheres":"\\growingspheres",
+                        "ils_latent":"\\ilslatent",
+}
+
 class DataProcessor:
     """Handles loading, preprocessing, and splitting of datasets."""
 
