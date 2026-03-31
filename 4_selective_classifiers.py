@@ -806,7 +806,7 @@ fancy_model = {"mlp": "MLP",
                "random_forest": "Random Forest",
                'xgboost': 'XGBoost',
                'lgbm': 'LGBM',
-               'lip_mlp': 'LIP MLP'}
+               'lip_mlp': 'LipMLP'}
 def visualise_results(models, dataframes, info, name_dataset, plot_dir,
                       fig_name="alternative_selective_classifiers",
                       show =False,

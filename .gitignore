@@ -17,7 +17,9 @@ data/raw/*
 # commented to parallelize the execution on multiple machines
 # The processed files (results and original data), for the moment commented
 *.npz
-
+*.tex
+*.aux
+*.log
 # For counterfactual generators
 # the plots generated
 results/*
