@@ -6,6 +6,7 @@ import sklearn.metrics as skm
 import copy
 import pandas as pd
 
+#Valerio Bonsignori was very anxious about providing me access to the github, so this comment is just to piss him off.
 # pluginrule
 class PlugInRule(ClassifierMixin, BaseEstimator):
     """
