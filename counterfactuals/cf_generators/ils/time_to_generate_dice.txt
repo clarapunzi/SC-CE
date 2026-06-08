@@ -1,0 +1,16 @@
+random_forest 31.0s 8 random calibration toy_dataset 200 dimentions_2
+mlp 11.62s 8 random calibration toy_dataset 200 dimentions_2
+xgboost 4.99s 8 random calibration toy_dataset 200 dimentions_2
+lgbm 5.89s 8 random calibration toy_dataset 200 dimentions_2
+random_forest 12.07s 8 random test toy_dataset 250 dimentions_2
+mlp 3.89s 8 random test toy_dataset 250 dimentions_2
+xgboost 4.67s 8 random test toy_dataset 250 dimentions_2
+lgbm 6.44s 8 random test toy_dataset 250 dimentions_2
+random_forest 4.83h 8 latent calibration german_credit 200 dimentions_2
+mlp 2.06h 8 latent calibration german_credit 200 dimentions_2
+xgboost 7.05h 8 latent calibration german_credit 200 dimentions_2
+lgbm 2.08h 8 latent calibration german_credit 200 dimentions_2
+random_forest 6.27h 8 latent test german_credit 250 dimentions_2
+mlp 1.83h 8 latent test german_credit 250 dimentions_2
+xgboost 1.35h 8 latent test german_credit 250 dimentions_2
+lgbm 2.54h 8 latent test german_credit 250 dimentions_2

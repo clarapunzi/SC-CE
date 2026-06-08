@@ -1,0 +1,9 @@
+[submodule "src/LORE_sa"]
+	path = src/LORE_sa
+	url = https://github.com/valevalerio/LORE_sa
+[submodule "src/cp_ils"]
+	path = src/cp_ils
+	url = https://github.com/valevalerio/cp_ils
+[submodule "src/growingspheres"]
+	path = src/growingspheres
+	url = https://github.com/valevalerio/growingspheres

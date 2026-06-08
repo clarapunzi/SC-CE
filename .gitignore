@@ -1,7 +1,82 @@
-/explanations_lorefirst_trial_0.p
-/explanations_lorefirst_trial_1.p
-/explanations_lorefirst_trial_2.p
-/explanations_lorefirst_trial_3.p
-/explanations_lorefirst_trial_4.p
-/explanations_lorefirst_trial_5.p
+OLD_src/*
 /Tabular
+cf_parameters.py
+*/__pycache__/*
+*.pyc
+wandb*
+
+src/inner_cross_val_OLD.py
+
+*.LOG
+*.OUT
+*.out
+plots/*
+# For the datasets in raw conditions, keep it so that the cleaning is not done again
+data/raw/*
+
+# commented to parallelize the execution on multiple machines
+# The processed files (results and original data), for the moment commented
+*.npz
+*.tex
+*.aux
+*.log
+# For counterfactual generators
+# the plots generated
+results/*
+
+# The counterfactuals generated: 
+# comment this to see what have you generated locally and upload eventually
+# cf_results*
+
+# The rules and trees generated:
+*rules_and_trees*
+
+# the non-optimized interptable latent space
+not_optimal_ils
+
+# The distances computed
+debug/*
+
+# Diffused files for the experiments
+time_to_generate.txt
+time_to_generate_ils.txt
+best_hp.txt
+
+# Other files
+ablation*
+cmaps.ipynb
+L2LoRe.jpg
+xRobe.png
+xClaraERobe.png
+Update the imports.txt
+counterfactuals/cf_generators/dice/time_to_generate_dice.txt
+counterfactuals/cf_generators/dice/time_to_generate.txt
+toy_dataset.pdf
+
+oldresults_deleateable/*
+
+# buit incldue with the negative value the counterfactuals folder 
+!counterfactuals/mlp/toy_dataset/*.npz
+!counterfactuals/mlp/adult48k/*.npz
+!counterfactuals/mlp/german_credit/*.npz
+!counterfactuals/mlp/breast_cancer/*.npz
+
+!counterfactuals/xgboost/adult48k/*.npz
+!counterfactuals/xgboost/german_credit/*.npz
+!counterfactuals/xgboost/toy_dataset/*.npz
+!counterfactuals/xgboost/breast_cancer/*.npz
+
+!counterfactuals/random_forest/adult48k/*.npz
+!counterfactuals/random_forest/german_credit/*.npz
+!counterfactuals/random_forest/toy_dataset/*.npz
+!counterfactuals/random_forest/breast_cancer/*.npz
+
+!counterfactuals/lgbm/adult48k/*.npz
+!counterfactuals/lgbm/german_credit/*.npz
+!counterfactuals/lgbm/toy_dataset/*.npz
+!counterfactuals/lgbm/breast_cancer/*.npz
+!counterfactuals/lgbm/breast_cancer
+
+
+SC-CE-paper/
+

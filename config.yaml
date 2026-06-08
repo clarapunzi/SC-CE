@@ -1,0 +1,66 @@
+data:
+  german_credit:
+    path: "data/raw/german_credit.csv"
+  toy_data:
+    path: "."
+  adult48k:
+    path: "data/raw/adult48k.csv"
+  breast_cancer:
+    path: "data/raw/breast_cancer.csv"
+  compass:
+    path: "data/raw/compass.csv"
+  eye:
+    path: "data/raw/eye.csv"
+
+wandb:
+  project_name: "counterfactuals-debug"
+  tags: ["nested-cv", "counterfactuals"]
+
+paths:
+  models: "models/"
+  counterfactuals: "counterfactuals/"
+
+models:
+  rf_params:
+    model__n_estimators: [50,100, 150]
+    model__max_depth: [6, 10, 30, null]
+    model__min_samples_split: [2, 5, 10]
+    model__min_samples_leaf: [1, 2, 4]
+
+  lgbm_params:
+    model__n_estimators: [50, 100, 150]
+    model__max_depth: [-1, 6, 10, 30]
+    model__learning_rate: [0.01, 0.05, 0.1]
+    model__verbosity: [-1]
+    
+  xgb_params:
+    model__n_estimators: [50,100, 150]
+    model__max_depth: [3, 6, 9, null]
+    model__learning_rate: [0.01, 0.05, 0.1]
+    model__min_child_weight: [1, 3, 5]
+
+  mlp_params:
+    model__hidden_layer_sizes: [[32], [64], [32,32], [64, 32]]
+    model__learning_rate_init: [0.001, 0.01, 0.1]
+    model__max_iter: [150, 300, 500]
+  lipshitzmlp_params:
+    model__hidden_layer_sizes: [[32], [64], [32,32], [64, 32]]
+    model__init_cis: ["auto"]
+    model__lipschitz_lambda: [0.0001, 0.001, 0.01]
+    model__learning_rate_init: [0.001, 0.01, 0.1]
+    model__max_iter: [150, 300, 500]
+counterfactuals:
+  num_counterfactuals: 32
+  dice:
+    proximity_weight: 0.5
+    method: "kdtree"
+  ils:
+    method: "latent"
+    search_best: True
+  growingspheres:
+    n_in_layer: 200
+    first_radius: 0.05
+    dicrease_radius: 2.0
+    sparse: True
+  lore:
+    method: "genetic"
