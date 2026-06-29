@@ -56,7 +56,6 @@ TODO:
 TODO refactorings:
 - [ ] remove the debug* notebook files from main folder
 
--->
 DONE:
 - [x] multiprocess computation of conterfactuals for different models
 - [x] add the lore genetic 
@@ -79,6 +78,23 @@ refactorings:
 - [x] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 - [x] add the metrics as tables! (still need to have python function to produce the latex table)
 
+-->
+
+# ''I know that I don’t know... and I explain why'' Robust abstention via counterfactual explanations
+SC-CE: A Method for Explaining the Reject Option - Official Implementation
+
+Please cite as 
+```
+@article{article,
+author = {Bonsignori, V. and Punzi, C. and Pellungrini, Roberto and Giannotti, F.},
+year = {2026},
+month = {01},
+pages = {1-1},
+title = {‘‘I know that I don’t know... and I explain why’’ Robust abstention via counterfactual explanations},
+journal = {IEEE Access},
+doi = {10.1109/ACCESS.2026.3705102}
+}
+```
 
 <!--
 ### remeber that for adding the submodules you have to 
