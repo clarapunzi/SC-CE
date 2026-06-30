@@ -1,15 +1,9 @@
-<!--#
-Dice Clara, che assumeva la continuità "locale".
-I piani d'attacco sono 2.
-1 rilanciamo gli experimients guardando i modelli con la continuità Lipshitz continuo.
+# SC-CE: Explaining the Reject Option
+## Selective Classification via Counterfactual explanation
+### Robust abstention via counterfactual explanations
+[![License: CC](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![IEEE](https://img.shields.io/badge/IEEE-11570111-00629B.svg)](https://ieeexplore.ieee.org/document/11570111)
 
-Train a mlp regolarizzato o SVM
-posso rilassare questa cosa per qualsiasi modello? Mi sto perdendo qualocosa ma è così importante?  
-
-Le proprietà dei controfattuali 
-
--->
-# SC-CE: A Method for Explaining the Reject Option
 finding the best threshold!
 
 The main script will perform a *cross-fold validation* and will save the best model for each type of blackbox classifier (random forest, multi-layer perceptron, xgboost and lgbm)
@@ -56,7 +50,6 @@ TODO:
 TODO refactorings:
 - [ ] remove the debug* notebook files from main folder
 
--->
 DONE:
 - [x] multiprocess computation of conterfactuals for different models
 - [x] add the lore genetic 
@@ -79,6 +72,23 @@ refactorings:
 - [x] improve the eval notebook (add plots for the ALL metrics (1 for each blackbox))
 - [x] add the metrics as tables! (still need to have python function to produce the latex table)
 
+-->
+
+# ''I know that I don’t know... and I explain why'' Robust abstention via counterfactual explanations
+SC-CE: A Method for Explaining the Reject Option - Official Implementation
+
+Please cite as 
+```
+@article{article,
+author = {Bonsignori, V. and Punzi, C. and Pellungrini, Roberto and Giannotti, F.},
+year = {2026},
+month = {01},
+pages = {1-1},
+title = {‘‘I know that I don’t know... and I explain why’’ Robust abstention via counterfactual explanations},
+journal = {IEEE Access},
+doi = {10.1109/ACCESS.2026.3705102}
+}
+```
 
 <!--
 ### remeber that for adding the submodules you have to 
