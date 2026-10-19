@@ -13,6 +13,7 @@ from src.model_trainer import ModelTrainer
 from sklearn.metrics.pairwise import cosine_distances
 import plotly.graph_objects as go
 import plotly.express as px
+from IPython.display import display, HTML
 
 
 means = np.array([38.643585, 1079.0676, 87.50231, 40.422382], dtype=np.float32)
@@ -492,7 +493,7 @@ def print_explanation(idx, cfs_test, test_dist_dict, font_size=20, n_features=12
     return html
 
 
-def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, cfs_test, n_features, max_dist=None):
+def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, max_dist=None):
 
     if max_dist is None:
         # Compute max distance and tau
@@ -539,7 +540,7 @@ def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, cfs_test, n
 
     # Use diff_idx for hover text if provided, else use idx
     #cf_idx = cf_idx if cf_idx is not None else idx
-    diff_text = get_diff_features(idx, cfs_test, test_dist_dict, n_features).replace('\n', '<br>* ')
+    diff_text = get_diff_features(idx).replace('\n', '<br>* ')
 
     fig.add_shape(
         type="line",
@@ -575,25 +576,37 @@ def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, cfs_test, n
 # Move "REJECT" and "ACCEPT" text annotations to the left of the bar (left of ticks)
     fig.add_annotation(
         y=tau/2,
-        x=-0.2,  # further left
-        text="REJECT<br>uncertainty zone",
+        x=-0.1,  # further left
+        text="<b>ABSTAIN</b><br>the model is uncertain",
         showarrow=False,
-        font=dict(size=18, color="red"),
+        font=dict(size=18, color="#8B0000"),
+        align='right',
         xanchor="right",
         yanchor="middle"
     )
     fig.add_annotation(
         y=(tau + max_dist)/2,
-        x=-0.2,  # further left
-        text="ACCEPT<br>safe AI prediction",
+        x=-0.1,  # further left
+        text="<b>PREDICT</b><br>the model is reliable",
         showarrow=False,
+        align='right',
         font=dict(size=18, color="green"),
         xanchor="right",
         yanchor="middle"
     )
+    fig.add_annotation(
+        y=tau,
+        x=-0.1,  # further left
+        text="<i>rejection threshold</i>",
+        showarrow=False,
+        align='right',
+        font=dict(size=18, color="black"),
+        xanchor="right",
+        yanchor="middle"
+    )
     fig.update_layout(
-        title=f"Instance-Counterfactual Distance Bar<br>Coverage=75%",
-        title_x=0.5,
+        #title=f"PREDICTION STABILITY METER<br>coverage level=75%",
+        #title_x=0.5,
         xaxis=dict(
             showticklabels=False,
             range=[-1.5, 1],  # expand left margin for annotation
@@ -604,8 +617,8 @@ def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, cfs_test, n
             tickvals=[0, tau, test_distance],
             ticktext=[
                 "0",
-                fr"<b><span style='color:red'>&#964; = {tau:.4f}</span></b>",
-                f"{test_distance:.4f}"
+                fr"<b><span style='color:black;'>τ = {tau:.2f}</span></b>",
+                f"<b><span style='color:{pastel_blue};'>d = {test_distance:.2f}</span></b>"
                 #f"{max_dist:.2f}"
             ],
             showgrid=False,
@@ -616,15 +629,19 @@ def plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, cfs_test, n
             tickfont=dict(size=15),
             ticklabelposition="outside right"
         ),
-        margin=dict(l=30, r=30, t=40, b=40),  # increase left margin for ticks and annotation
+        margin=dict(l=0, r=0, t=0, b=0),  # increase left margin for ticks and annotation
         showlegend=False,
         bargap=0,
-        height=500,
-        width=550,
-        plot_bgcolor='white'
+        #height=500,
+        #width=550,
+        plot_bgcolor='white',
+        font=dict(family="DejaVu Sans, Liberation Sans, Arial, Helvetica, sans-serif")
     )
 
     return fig
+
+# Usage:
+#plot_instance_distance_bar_v(good_idxs[0], cal_dist_dict, test_dist_dict, max_dist=0.5)
 
 
 def get_cf_differing_1f(rej_idx, feature_name, cfs_test, test_dist_dict, n_features):
@@ -655,6 +672,226 @@ def get_cf_differing_nf(rej_idx, feature_names, cfs_test, test_dist_dict, n_feat
     return differing_nf
 
 
+
+def print_explanation_one_col(idx, cfs_test, test_dist_dict, font_size=20, disp=True, title=True,  n_features=12):
+    x_original = cfs_test[idx]['original_instance'].values[0]
+    x = {k:v for k, v in make_sample_human_readable(x_original).items() if not (k.endswith('_raw') or k.endswith('_probability') or k.startswith('employment'))}
+
+    x_cf = cfs_test[idx]['counterfactuals'].iloc[test_dist_dict[idx]['best_cf']].values[0][:n_features]
+    c = {k:v for k, v in make_sample_human_readable(x_cf).items() if not (k.endswith('_raw') or k.endswith('_probability') or k.startswith('employment'))}
+
+    min_d = test_dist_dict[idx]['min_d']
+    y_true = cfs_test[idx]['true_class'].values[0]
+    if test_dist_dict[idx]['bb_is_correct']==True:
+        y = y_true
+    else:
+        y = 1 - y_true  # if the BB is not correct, we flip the label
+
+    keys = list(x.keys())
+    demographics = ['age', 'education', 'sex', 'marital-status', 'relationship', 'race', 'native-country']
+    work_info = ['workclass', 'occupation', 'hours-per-week']
+    financial_info = ['capital-gain', 'capital-loss']
+    
+    # first get the features that are the same and different
+    same = []
+    diff = []
+
+    for k in keys:
+        v1 = x[k]
+        v2 = c[k]
+        if v1 == v2:
+            same.append(k)
+        else:
+            diff.append(k)
+
+    html = []
+    if title:
+      html.append(f"<p style='font-size: {font_size+4}px'><b>Local sensitivity analysis</b></p>")
+      html.append(f"<p style='font-size: {font_size}px'>Features in <span style='color: #8B0000;'><b>red</b></span> indicate perturbations of the input that lead to a different prediction</p>")
+    #html.append(f"<p style='font-size: {font_size}px'>Although the model leans toward <b>{adult_class_encoding[y]}</b>, an almost identical case would produce the opposite prediction, indicating high uncertainty:</p>")
+    def section_list(features, values, changed=False):
+        items = []
+        for f in features:
+            if f in values:
+                fname = f.replace('-', ' ').capitalize()
+                if changed:
+                    items.append(f"<li><b>{fname}</b>: {x[f]} &rarr; {c[f]}</li>")
+                else:
+                    items.append(f"<li><b>{fname}</b>: {x[f]}</li>")
+        return ''.join(items)
+
+    #html = []
+    #html.append(f"<p style='font-size: 18px'>While the ML model would have suggested the output <b>{adult_class_encoding[y]}</b>, the opposite prediction would have been obtained with a near identical input:</p>")
+    html.append("""
+    <div style="display: inline-block; border: 2px solid #4A5568; border-radius: 5px; padding: 15px; margin: 5px 0; font-size: {font_size}px;">
+      <div>
+        <ul style="list-style-type:none; margin: 0; padding-left: 0;color: black;">
+          <li style="margin-top:0 ;"><b>Demographic information</b>
+            <ul>
+              {dem_same}
+            </ul>
+            <ul style="flex: 1;color: #8B0000;">
+              {dem_diff}
+            </ul>
+          </li>
+          <li style="margin-top: 12px;"><b>Work-related information</b>
+            <ul>
+              {work_same}
+            </ul>
+            <ul style="flex: 1;color: #8B0000;">
+              {work_diff}
+            </ul>
+          </li>
+          <li style="margin-top: 12px;"><b>Financial information</b>
+            <ul>
+              {fin_same}
+            </ul>
+            <ul style="flex: 1;color: #8B0000;">
+              {fin_diff}
+            </ul>
+          </li>
+        </ul>
+      </div>
+    """.format(
+        font_size=font_size,
+        dem_same=section_list(demographics, same),
+        work_same=section_list(work_info, same),
+        fin_same=section_list(financial_info, same),
+        dem_diff=section_list(demographics, diff, changed=True),
+        work_diff=section_list(work_info, diff, changed=True),
+        fin_diff=section_list(financial_info, diff, changed=True),
+        opp_class=adult_class_encoding[1 - y]
+    ))
+    if disp:
+        display(HTML(''.join(html)))
+    return HTML(''.join(html))
+
+
+def get_rejected_explanation_html(fig, html_obj):
+    html_output = HTML(f"""
+    <div style="
+        width:28cm;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+    ">
+
+    <!-- Title -->
+    <div style="font-size:20px;">
+        <b><span style="color:#8B0000;font-size:24px">The model ABSTAINS from making a prediction</span></b><br>
+        The instance lies close to the decision boundary, where a small perturbation of the input could lead to different outcomes. The distance displayed (<span style='color: #3465A4;'><b><i>d=0.06</i></b></span>) measures how close your input is to the rejection threshold (<b><i>τ=0.15</i></b>), which is calibrated based on the target coverage chosen during system setup. Below this threshold, the model doesn’t know which could be a reliable prediction.
+    </div>
+
+    <!-- Two panels -->
+    <div style="display:flex; gap:20px; align-items:stretch;">
+
+        <!-- Plotly Figure -->
+        <div style="
+            background-color:white;
+            padding:15px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.05);
+            flex:1;
+            display:flex;
+            flex-direction:column;
+        ">
+            <div style="text-align:center; font-size:20px; margin-bottom:10px;">
+                <b>Prediction stability meter</b><br>Coverage level=75%
+            </div>
+
+            <div style="flex:1;">
+                {fig.to_html(include_plotlyjs=True, full_html=True, default_width="13cm")}
+            </div>
+        </div>
+
+        <!-- HTML Explanation -->
+        <div style="
+            background-color:white;
+            padding:15px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.05);
+            flex:1;
+            display:flex;
+            flex-direction:column;
+        ">
+            <div style="text-align:center; font-size:20px; margin-bottom:10px;">
+                <b>Local stability analysis</b><br><span style='color: #8B0000;'><b>Red</b></span> features indicate perturbations of the input that alter the prediction (larger perturbations imply higher stability)
+            </div>
+
+            <div style="flex:1;">
+            {html_obj.data}
+            </div>
+
+    </div>
+
+    </div>
+    """)
+    return html_output
+
+def get_accepted_explanation_html(fig, html_obj):
+    html_output = HTML(f"""
+    <div style="
+        width:28cm;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+    ">
+
+    <!-- Title -->
+    <div style="font-size:20px;">
+        <b><span style="color:green;font-size:24px">PREDICTION: < 50K</span></b><br>
+        The instance lies in the model's safe zone, where predictions remain stable against input perturbation. The distance displayed (<span style='color: #3465A4;'><b><i>d=0.73</i></b></span>) measures how far your input is from the rejection threshold (<b><i>τ=0.15</i></b>), which is calibrated based on the target coverage chosen during system setup. Above this threshold, the model is confident enough to issue a reliable prediction.
+    </div>
+
+    <!-- Two panels -->
+    <div style="display:flex; gap:20px; align-items:stretch;">
+
+        <!-- Plotly Figure -->
+        <div style="
+            background-color:white;
+            padding:15px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.05);
+            flex:1;
+            display:flex;
+            flex-direction:column;
+        ">
+            <div style="text-align:center; font-size:20px; margin-bottom:10px;">
+                <b>Prediction stability meter</b><br>Coverage level=75%
+            </div>
+
+            <div style="flex:1;">
+                {fig.to_html(include_plotlyjs=True, full_html=True, default_width="13cm")}
+            </div>
+        </div>
+
+        <!-- HTML Explanation -->
+        <div style="
+            background-color:white;
+            padding:15px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            box-shadow:0 2px 6px rgba(0,0,0,0.05);
+            flex:1;
+            display:flex;
+            flex-direction:column;
+        ">
+            <div style="text-align:center; font-size:20px; margin-bottom:10px;">
+                <b>Local stability analysis</b><br><span style='color: #8B0000;'><b>Red</b></span> features indicate perturbations of the input that alter the prediction (larger perturbations imply higher stability)
+            </div>
+
+            <div style="flex:1;">
+            {html_obj.data}
+            </div>
+
+    </div>
+
+    </div>
+    """)
+    return html_output
 
 def main():
     config = utl.load_config('config.yaml')
@@ -736,14 +973,35 @@ def main():
     acc_idx = [i for i in test_dist_dict if (test_dist_dict[i]['accept']==1) and (len(test_dist_dict[i]['best_cf'])>0)]
     print(len(rej_idx), len(acc_idx))
     
-    good_idxs = get_cf_differing_nf(rej_idx, ['sex', 'race', 'education'], cfs_test, test_dist_dict, n_features)
-    
-    # Bar plot of relative distance gap
-    bar = plot_instance_distance_bar_v(good_idxs[10], cal_dist_dict, test_dist_dict, cfs_test, n_features, max_dist=0.5)
-    
-    # text explanation of counterfactual
-    text = print_explanation(good_idxs[10], cfs_test, test_dist_dict, font_size=34, n_features=n_features)
-    
+    #good_idxs = get_cf_differing_nf(rej_idx, ['sex', 'race', 'education'], cfs_test, test_dist_dict, n_features)
+    if not os.path.isdir("AcceptedExplanations"):
+        os.makedirs("AcceptedExplanations")
+    if not os.path.isdir("RejectedExplanations"):
+        os.makedirs("RejectedExplanations")
+
+    # Accepted instances
+    for idx in acc_idx:
+        # Bar plot of relative distance gap
+        bar = plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, max_dist=0.5)
+        # text explanation of counterfactual
+        text = print_explanation_one_col(idx, cfs_test, test_dist_dict, font_size=20, n_features=n_features, disp=False, title=False)
+
+        html_output = get_accepted_explanation_html(bar, text)
+
+        with open("AcceptedExplanations/{}.html".format(idx), "w") as f:
+            f.write(html_output.data)
+            
+    for idx in rej_idx:
+        # Bar plot of relative distance gap
+        bar = plot_instance_distance_bar_v(idx, cal_dist_dict, test_dist_dict, max_dist=0.5)
+        # text explanation of counterfactual
+        text = print_explanation_one_col(idx, cfs_test, test_dist_dict, font_size=20, n_features=n_features, disp=False, title=False)
+
+        html_output = get_rejected_explanation_html(bar, text)
+
+        with open("RejectedExplanations/{}.html".format(idx), "w") as f:
+            f.write(html_output.data)
+
     return bar, text
 
 
